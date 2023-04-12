@@ -1,0 +1,51 @@
+[versions]
+clikt="3.5.2"
+freemarker = "2.3.31"
+jreleaser = "1.5.0"
+kaml = "0.35.3"
+kobweb-cli = "0.9.12"
+kobweb-libs = "0.12.4"
+kotter = "1.1.1-SNAPSHOT"
+kotlin = "1.8.10"
+kotlinx-coroutines = "1.6.0"
+okhttp = "4.10.0"
+shadow = "7.0.0"
+
+[libraries]
+clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+#commonmark-core = { module = "org.commonmark:commonmark", version.ref = "commonmark" }
+#commonmark-autolink = { module = "org.commonmark:commonmark-ext-autolink", version.ref = "commonmark" }
+#commonmark-frontmatter = { module = "org.commonmark:commonmark-ext-yaml-front-matter", version.ref = "commonmark" }
+#commonmark-tables = { module = "org.commonmark:commonmark-ext-gfm-tables", version.ref = "commonmark" }
+#commonmark-tasklist = { module = "org.commonmark:commonmark-ext-task-list-items", version.ref = "commonmark" }
+freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker"}
+#jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
+kobweb-common = { module = "com.varabyte.kobweb:kobweb-common", version.ref = "kobweb-libs" }
+kotter = { module = "com.varabyte.kotter:kotter", version.ref = "kotter" }
+#kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
+#kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+#kotlinx-cli = { module = "org.jetbrains.kotlinx:kotlinx-cli", version.ref = "kotlinx-cli" }
+kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
+#kotlinx-html = { module = "org.jetbrains.kotlinx:kotlinx-html", version.ref = "kotlinx-html" }
+#kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
+#ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+#ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+#ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+#ktor-server-caching-headers = { module = "io.ktor:ktor-server-caching-headers", version.ref = "ktor" }
+#ktor-server-compression = { module = "io.ktor:ktor-server-compression", version.ref = "ktor" }
+#ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+#ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+#ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
+#ktor-server-default-headers = { module = "io.ktor:ktor-server-default-headers", version.ref = "ktor" }
+#ktor-server-host-common = { module = "io.ktor:ktor-server-host-common", version.ref = "ktor" }
+#ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+#ktor-server-tests = { module = "io.ktor:ktor-server-tests", version.ref = "ktor" }
+#logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+
+[plugins]
+jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
