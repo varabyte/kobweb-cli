@@ -78,10 +78,10 @@ if (githubUsername != null && githubToken != null) {
                 documentation.set("https://kobweb.varabyte.com/docs")
                 license.set("http://www.apache.org/licenses/LICENSE-2.0")
             }
-            description.set("Set up and manage your Compose for Web app")
+            description.set("Set up and manage your Compose HTML app")
             longDescription.set(
                 """
-                Kobweb CLI provides commands to handle the tedious parts of building a Compose for Web app, including
+                Kobweb CLI provides commands to handle the tedious parts of building a Compose HTML app, including
                 project setup and configuration.
             """.trimIndent()
             )
