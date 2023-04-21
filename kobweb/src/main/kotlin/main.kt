@@ -2,10 +2,7 @@ import com.github.ajalt.clikt.core.*
 import com.github.ajalt.clikt.output.CliktHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
-import com.github.ajalt.clikt.parameters.options.counted
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.validate
+import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.enum
 import com.varabyte.kobweb.cli.common.DEFAULT_BRANCH
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
@@ -204,12 +201,13 @@ fun main(args: Array<String>) {
         val env by option(help = "Whether the server should run in development mode or production.").enum<ServerEnvironment>().default(ServerEnvironment.DEV)
         val tty by tty()
         val notty by notty()
+        val foreground by option("-f", "--foreground", help = "Keep kobweb running in the foreground. This value is ignored unless in --notty mode.").flag(default = false)
         val mode by mode()
         val layout by layout()
 
         override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty, mode)
         override fun doRun() {
-            handleRun(env, layout, shouldUseAnsi(tty, notty, mode))
+            handleRun(env, layout, shouldUseAnsi(tty, notty, mode), foreground)
         }
     }
 

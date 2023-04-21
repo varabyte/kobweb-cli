@@ -23,11 +23,7 @@ import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.foundation.timer.addTimer
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlin.time.Duration.Companion.milliseconds
 
 private enum class RunState {
@@ -44,12 +40,13 @@ fun handleRun(
     env: ServerEnvironment,
     siteLayout: SiteLayout,
     useAnsi: Boolean,
+    runInForeground: Boolean,
 ) {
     val originalEnv = env
 
     @Suppress("NAME_SHADOWING") // We're intentionally intercepting the original value
     val env = env.takeIf { siteLayout != SiteLayout.STATIC } ?: ServerEnvironment.PROD
-    KobwebGradle(env).use { kobwebGradle -> handleRun(originalEnv, env, siteLayout, useAnsi, kobwebGradle) }
+    KobwebGradle(env).use { kobwebGradle -> handleRun(originalEnv, env, siteLayout, useAnsi, runInForeground, kobwebGradle) }
 }
 
 private fun handleRun(
@@ -57,10 +54,15 @@ private fun handleRun(
     env: ServerEnvironment,
     siteLayout: SiteLayout,
     useAnsi: Boolean,
-    kobwebGradle: KobwebGradle
+    runInForeground: Boolean,
+    kobwebGradle: KobwebGradle,
 ) {
     var runInPlainMode = !useAnsi
     if (useAnsi && !trySession {
+        if (runInForeground) {
+            warn("User requested running in foreground mode, which will be ignored in interactive mode.")
+        }
+
         val kobwebApplication = findKobwebApplication() ?: return@trySession
         if (isServerAlreadyRunningFor(kobwebApplication)) return@trySession
 
@@ -240,11 +242,35 @@ private fun handleRun(
     }
 
     if (runInPlainMode) {
-        assertKobwebApplication()
-            .also { kobwebApplication -> kobwebApplication.assertServerNotAlreadyRunning() }
+        val kobwebApplication = assertKobwebApplication()
+            .also { it.assertServerNotAlreadyRunning() }
 
         // If we're non-interactive, it means we just want to start the Kobweb server and exit without waiting for
         // for any additional changes. (This is essentially used when run in a web server environment)
         kobwebGradle.startServer(enableLiveReloading = false, siteLayout).also { it.waitFor() }
+
+        val serverStateFile = ServerStateFile(kobwebApplication.kobwebFolder)
+        runBlocking {
+            while (serverStateFile.content?.isRunning() == false) {
+                delay(20) // Low delay because startup should happen fairly quickly
+            }
+        }
+
+        if (runInForeground) {
+            Runtime.getRuntime().addShutdownHook(Thread {
+                if (serverStateFile.content?.isRunning() == false) return@Thread
+                ServerRequestsFile(kobwebApplication.kobwebFolder).enqueueRequest(ServerRequest.Stop())
+                println(); println()
+                println("CTRL-C received. Sending a message to kill the server.")
+                println("You may still have to run 'kobweb stop' if it didn't work.")
+                System.out.flush()
+            })
+
+            runBlocking {
+                while (serverStateFile.content?.isRunning() == true) {
+                    delay(300)
+                }
+            }
+        }
     }
 }

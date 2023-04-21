@@ -95,6 +95,12 @@ fun Session.informInfo(message: String) {
     }.run()
 }
 
+fun Session.warn(message: String) {
+    section {
+        yellow { textLine(message) }
+    }.run()
+}
+
 /**
  * @param validateAnswer Take a string (representing a user's answer), returning a new string which represents an error
  *   message, or null if no error.
