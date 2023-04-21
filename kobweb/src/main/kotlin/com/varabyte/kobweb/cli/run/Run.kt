@@ -15,6 +15,7 @@ import com.varabyte.kotter.foundation.input.Keys
 import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
+import com.varabyte.kotter.foundation.shutdown.addShutdownHook
 import com.varabyte.kotter.foundation.text.cyan
 import com.varabyte.kotter.foundation.text.green
 import com.varabyte.kotter.foundation.text.red
@@ -159,7 +160,7 @@ private fun handleRun(
                 handleGradleOutput(line, isError) { alert -> gradleAlertBundle.handleAlert(alert) }
             }
 
-            Runtime.getRuntime().addShutdownHook(Thread {
+            addShutdownHook {
                 if (runState == RunState.RUNNING || runState == RunState.STOPPING) {
                     cancelReason =
                         "CTRL-C received. We kicked off a request to stop the server but we have to exit NOW before waiting for a confirmation."
@@ -171,7 +172,7 @@ private fun handleRun(
                     runState = RunState.CANCELLED
                 }
                 signal()
-            })
+            }
 
             onKeyPressed {
                 if (key in listOf(Keys.EOF, Keys.Q)) {
