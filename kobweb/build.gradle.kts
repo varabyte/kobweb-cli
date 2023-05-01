@@ -72,6 +72,8 @@ if (githubUsername != null && githubToken != null) {
     jreleaser {
         dryrun.set(false) // Specified explicitly for convenience - set dryrun to true when experimenting with values!
         gitRootSearch.set(true)
+        dependsOnAssemble.set(false) // We pre-assemble ourselves (using shadow jar)
+
         project {
             links {
                 homepage.set("https://kobweb.varabyte.com/")
