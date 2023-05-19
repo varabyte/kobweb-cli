@@ -37,15 +37,18 @@ application {
     mainClass.set("MainKt")
 }
 
-tasks.withType<ShadowJar> {
-    minimize {
-        // Leave Jansi deps in place, or else Windows won't work
-        exclude(dependency("org.fusesource.jansi:.*:.*"))
-        exclude(dependency("org.jline:jline-terminal-jansi:.*"))
-        // Leave SLF4J in place, or else a warning is spit out
-        exclude(dependency("org.slf4j.*:.*:.*"))
-    }
-}
+// We used to minimize this jar, but it kept causing us problems. At our most recent check a minimized jar was 11MB vs.
+// 12MB not minimized. It's just not worth the surprising crashes!
+// Just in case we decide to minimize again someday, here's what we were doing.
+//tasks.withType<ShadowJar> {
+//    minimize {
+//        // Leave Jansi deps in place, or else Windows won't work
+//        exclude(dependency("org.fusesource.jansi:.*:.*"))
+//        exclude(dependency("org.jline:jline-terminal-jansi:.*"))
+//        // Leave SLF4J in place, or else a warning is spit out
+//        exclude(dependency("org.slf4j.*:.*:.*"))
+//    }
+//}
 
 distributions {
     named("shadow") {
