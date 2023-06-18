@@ -35,8 +35,8 @@ private enum class Mode {
 }
 
 private fun ParameterHolder.mode() = option("-m", "--mode",
-    help = "(DEPRECATED, use `--[no]tty` instead) If interactive, runs in an ANSI-enabled terminal expecting user input. If dumb, use plain output only."
-).enum<Mode>()
+    help = "If interactive, runs in an ANSI-enabled terminal expecting user input. If dumb, use plain output only."
+).enum<Mode>().deprecated("Warning: Option --mode is deprecated. Use --tty or --notty instead.")
 
 private fun ParameterHolder.layout() = option("-l", "--layout",
     help = "Specify the organizational layout of the site files.",
@@ -62,10 +62,6 @@ private fun Mode.toTtyParam() = when (this) {
     Mode.DUMB -> "--notty"
 }
 
-private fun Mode.printDeprecationWarning() {
-    println("Warning: `--mode ${this.name.lowercase()}` is deprecated and will be removed in a future version. Please use `${this.toTtyParam()}` instead.")
-}
-
 /**
  * Resolve the current way to determine if we should use ANSI support.
  *
@@ -89,10 +85,7 @@ private fun shouldUseAnsi(tty: Int, notty: Int, mode: Mode?): Boolean {
     }
     return tty
         ?: notty?.not()
-        ?: @Suppress("NAME_SHADOWING") mode?.let { mode ->
-            mode.printDeprecationWarning()
-            mode == Mode.INTERACTIVE
-        }
+        ?: @Suppress("NAME_SHADOWING") mode?.let { mode -> mode == Mode.INTERACTIVE }
         ?: true
 }
 
