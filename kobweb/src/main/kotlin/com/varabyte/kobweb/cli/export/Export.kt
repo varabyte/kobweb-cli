@@ -10,6 +10,7 @@ import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
+import java.io.File
 
 private enum class ExportState {
     EXPORTING,
@@ -20,9 +21,9 @@ private enum class ExportState {
     INTERRUPTED,
 }
 
-fun handleExport(siteLayout: SiteLayout, useAnsi: Boolean) {
+fun handleExport(projectDir: File, siteLayout: SiteLayout, useAnsi: Boolean) {
     // exporting is a production-only action
-    KobwebGradle(ServerEnvironment.PROD).use { kobwebGradle ->
+    KobwebGradle(ServerEnvironment.PROD, projectDir).use { kobwebGradle ->
         handleExport(siteLayout, useAnsi, kobwebGradle)
     }
 }
@@ -31,7 +32,7 @@ private fun handleExport(siteLayout: SiteLayout, useAnsi: Boolean, kobwebGradle:
     var runInPlainMode = !useAnsi
 
     if (useAnsi && !trySession {
-        val kobwebApplication = findKobwebApplication() ?: return@trySession
+        val kobwebApplication = findKobwebApplication(kobwebGradle.projectDir.toPath()) ?: return@trySession
         if (isServerAlreadyRunningFor(kobwebApplication)) return@trySession
 
         newline() // Put space between user prompt and eventual first line of Gradle output
@@ -112,7 +113,7 @@ private fun handleExport(siteLayout: SiteLayout, useAnsi: Boolean, kobwebGradle:
     }
 
     if (runInPlainMode) {
-        assertKobwebApplication()
+        assertKobwebApplication(kobwebGradle.projectDir.toPath())
             .also { kobwebApplication -> kobwebApplication.assertServerNotAlreadyRunning() }
 
         kobwebGradle.export(siteLayout).also { it.waitFor() }

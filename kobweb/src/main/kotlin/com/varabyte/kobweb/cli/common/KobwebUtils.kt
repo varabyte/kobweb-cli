@@ -7,10 +7,11 @@ import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.runtime.Session
 import com.varabyte.kotter.runtime.render.RenderScope
+import java.nio.file.Path
 
-fun assertKobwebApplication(): KobwebApplication {
+fun assertKobwebApplication(path: Path): KobwebApplication {
     return try {
-        KobwebApplication()
+        KobwebApplication(path)
     } catch (ex: KobwebException) {
         throw KobwebException("This command must be called in a Kobweb application module.")
     }
@@ -33,9 +34,9 @@ fun KobwebApplication.isServerAlreadyRunning(): Boolean {
     }
 }
 
-fun Session.findKobwebApplication(): KobwebApplication? {
+fun Session.findKobwebApplication(path: Path): KobwebApplication? {
     return try {
-        assertKobwebApplication()
+        assertKobwebApplication(path)
     } catch (ex: KobwebException) {
         informError(ex.message!!)
         null

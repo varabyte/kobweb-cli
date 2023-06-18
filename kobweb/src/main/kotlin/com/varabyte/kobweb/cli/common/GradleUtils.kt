@@ -28,7 +28,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.text.StringBuilder
 
-class KobwebGradle(private val env: ServerEnvironment, projectDir: File = File(".")): Closeable {
+class KobwebGradle(private val env: ServerEnvironment, val projectDir: File): Closeable {
     private val gradleConnector = GradleConnector.newConnector().forProjectDirectory(projectDir).also {
         // The Gradle daemon spawned by the tooling API seems to stick around and not always get removed by
         // ./gradlew --stop for some reason? Adding a timeout seems to be the way that some projects deal with

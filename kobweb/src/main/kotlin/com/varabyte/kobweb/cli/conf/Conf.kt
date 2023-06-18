@@ -2,9 +2,10 @@ package com.varabyte.kobweb.cli.conf
 
 import com.varabyte.kobweb.cli.common.assertKobwebApplication
 import com.varabyte.kobweb.project.conf.KobwebConfFile
+import java.io.File
 
-fun handleConf(query: String) {
-    val kobwebApplication = assertKobwebApplication()
+fun handleConf(query: String, projectDir: File) {
+    val kobwebApplication = assertKobwebApplication(projectDir.toPath())
     if (query.isBlank()) return // No query? OK I guess we're done
 
     val confFile = KobwebConfFile(kobwebApplication.kobwebFolder)

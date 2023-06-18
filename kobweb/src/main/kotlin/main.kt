@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 
 private enum class Mode {
     /** Expect a user at an ANSI-enabled terminal interacting with the command */
@@ -40,6 +41,10 @@ private fun ParameterHolder.mode() = option("-m", "--mode",
 private fun ParameterHolder.layout() = option("-l", "--layout",
     help = "Specify the organizational layout of the site files.",
 ).enum<SiteLayout>().default(SiteLayout.KOBWEB)
+
+private fun ParameterHolder.path() = option("-p", "--path",
+    help = "The path to the Kobweb application module."
+).default("", defaultForHelp = "the current directory")
 
 private fun ParameterHolder.tty() = option("-t", "--tty",
     help = "Enable TTY support (default). Tries to run using ANSI support in an interactive mode if it can. Falls back to `--notty` otherwise."
@@ -190,10 +195,11 @@ fun main(args: Array<String>) {
         val notty by notty()
         val mode by mode()
         val layout by layout()
+        val path by path()
 
         override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty, mode)
         override fun doRun() {
-            handleExport(layout, shouldUseAnsi(tty, notty, mode))
+            handleExport(File(path), layout, shouldUseAnsi(tty, notty, mode))
         }
     }
 
@@ -204,10 +210,11 @@ fun main(args: Array<String>) {
         val foreground by option("-f", "--foreground", help = "Keep kobweb running in the foreground. This value is ignored unless in --notty mode.").flag(default = false)
         val mode by mode()
         val layout by layout()
+        val path by path()
 
         override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty, mode)
         override fun doRun() {
-            handleRun(env, layout, shouldUseAnsi(tty, notty, mode), foreground)
+            handleRun(env, File(path), layout, shouldUseAnsi(tty, notty, mode), foreground)
         }
     }
 
@@ -215,21 +222,23 @@ fun main(args: Array<String>) {
         val tty by tty()
         val notty by notty()
         val mode by mode()
+        val path by path()
 
         // Don't check for an upgrade on create, because the user probably just installed kobweb anyway, and the update
         // message kind of overwhelms the instructions to start running the app.
         override fun shouldCheckForUpgrade() = false
 
         override fun doRun() {
-            handleStop(shouldUseAnsi(tty, notty, mode))
+            handleStop(File(path), shouldUseAnsi(tty, notty, mode))
         }
     }
 
     class Conf : KobwebSubcommand(help = "Query a value from the .kobweb/conf.yaml file (e.g. \"server.port\")") {
         val query by argument(help = "The query to search the .kobweb/conf.yaml for (e.g. \"server.port\")")
+        val path by path()
 
         override fun doRun() {
-            handleConf(query)
+            handleConf(query, File(path))
         }
     }
 
