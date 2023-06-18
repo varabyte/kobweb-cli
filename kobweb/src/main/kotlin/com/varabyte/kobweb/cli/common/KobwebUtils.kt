@@ -60,8 +60,3 @@ fun Session.showStaticSiteLayoutWarning() {
         textLine()
     }.run()
 }
-
-fun RenderScope.showDownloadDelayWarning() {
-    yellow { textLine("Output may seem to pause for a while if Kobweb needs to download / resolve dependencies.") }
-    textLine()
-}
