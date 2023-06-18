@@ -167,8 +167,8 @@ fun main(args: Array<String>) {
     }
 
     class List : KobwebSubcommand(help = "List all project templates") {
-        val repo by option(help = "The repository that hosts Kobweb templates").default(DEFAULT_REPO)
-        val branch by option(help = "The branch in the repository to use").default(DEFAULT_BRANCH)
+        val repo by option(help = "The repository that hosts Kobweb templates.").default(DEFAULT_REPO)
+        val branch by option(help = "The branch in the repository to use.").default(DEFAULT_BRANCH)
 
         override fun shouldCheckForUpgrade() = true
         override fun doRun() {
@@ -178,8 +178,8 @@ fun main(args: Array<String>) {
 
     class Create : KobwebSubcommand(help = "Create a Kobweb app / site from a template") {
         val template by argument(help = "The name of the template to instantiate, e.g. 'app'. If not specified, choices will be presented.").optional()
-        val repo by option(help = "The repository that hosts Kobweb templates").default(DEFAULT_REPO)
-        val branch by option(help = "The branch in the repository to use").default(DEFAULT_BRANCH)
+        val repo by option(help = "The repository that hosts Kobweb templates.").default(DEFAULT_REPO)
+        val branch by option(help = "The branch in the repository to use.").default(DEFAULT_BRANCH)
 
         // Don't check for an upgrade on create, because the user probably just installed kobweb anyway, and the update
         // message kind of overwhelms the instructions to start running the app.
@@ -234,7 +234,7 @@ fun main(args: Array<String>) {
     }
 
     class Conf : KobwebSubcommand(help = "Query a value from the .kobweb/conf.yaml file (e.g. \"server.port\")") {
-        val query by argument(help = "The query to search the .kobweb/conf.yaml for (e.g. \"server.port\")")
+        val query by argument(help = "The query to search the .kobweb/conf.yaml for (e.g. \"server.port\").")
         val path by path()
 
         override fun doRun() {
