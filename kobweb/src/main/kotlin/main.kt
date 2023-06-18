@@ -43,8 +43,11 @@ private fun ParameterHolder.layout() = option("-l", "--layout",
 ).enum<SiteLayout>().default(SiteLayout.KOBWEB)
 
 private fun ParameterHolder.path() = option("-p", "--path",
-    help = "The path to the Kobweb application module."
-).default("", defaultForHelp = "the current directory")
+    help = "The path to the Kobweb application module.",
+)
+    .convert { File(it) }
+    .default(File("."), defaultForHelp = "the current directory")
+    .validate { require(it.exists()) { "Path \"$it\" does not exist" } }
 
 private fun ParameterHolder.tty() = option("-t", "--tty",
     help = "Enable TTY support (default). Tries to run using ANSI support in an interactive mode if it can. Falls back to `--notty` otherwise."
@@ -199,7 +202,7 @@ fun main(args: Array<String>) {
 
         override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty, mode)
         override fun doRun() {
-            handleExport(File(path), layout, shouldUseAnsi(tty, notty, mode))
+            handleExport(path, layout, shouldUseAnsi(tty, notty, mode))
         }
     }
 
@@ -214,7 +217,7 @@ fun main(args: Array<String>) {
 
         override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty, mode)
         override fun doRun() {
-            handleRun(env, File(path), layout, shouldUseAnsi(tty, notty, mode), foreground)
+            handleRun(env, path, layout, shouldUseAnsi(tty, notty, mode), foreground)
         }
     }
 
@@ -229,7 +232,7 @@ fun main(args: Array<String>) {
         override fun shouldCheckForUpgrade() = false
 
         override fun doRun() {
-            handleStop(File(path), shouldUseAnsi(tty, notty, mode))
+            handleStop(path, shouldUseAnsi(tty, notty, mode))
         }
     }
 
@@ -238,7 +241,7 @@ fun main(args: Array<String>) {
         val path by path()
 
         override fun doRun() {
-            handleConf(query, File(path))
+            handleConf(query, path)
         }
     }
 
