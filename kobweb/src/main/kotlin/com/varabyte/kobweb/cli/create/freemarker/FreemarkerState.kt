@@ -5,13 +5,7 @@ import com.varabyte.kobweb.cli.common.processing
 import com.varabyte.kobweb.cli.common.queryUser
 import com.varabyte.kobweb.cli.common.template.Instruction
 import com.varabyte.kobweb.cli.common.wildcardToRegex
-import com.varabyte.kobweb.cli.create.freemarker.methods.FileToPackageMethod
-import com.varabyte.kobweb.cli.create.freemarker.methods.FileToTitleMethod
-import com.varabyte.kobweb.cli.create.freemarker.methods.IsNotEmptyMethod
-import com.varabyte.kobweb.cli.create.freemarker.methods.IsPackageMethod
-import com.varabyte.kobweb.cli.create.freemarker.methods.IsYesNoMethod
-import com.varabyte.kobweb.cli.create.freemarker.methods.PackageToPathMethod
-import com.varabyte.kobweb.cli.create.freemarker.methods.YesNoToBoolMethod
+import com.varabyte.kobweb.cli.create.freemarker.methods.*
 import com.varabyte.kobweb.common.error.KobwebException
 import com.varabyte.kobweb.common.path.toUnixSeparators
 import com.varabyte.kotter.runtime.Session
@@ -43,8 +37,12 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
         "projectFolder" to dest.name,
 
         // region Validators
+        "isInt" to IsIntMethod(), // Added in 0.9.13
         "isNotEmpty" to IsNotEmptyMethod(),
+        "isNumber" to IsNumberMethod(), // Added in 0.9.13
         "isPackage" to IsPackageMethod(),
+        "isPositiveInt" to IsPositiveIntMethod(), // Added in 0.9.13
+        "isPositiveNumber" to IsPositiveNumberMethod(), // Added in 0.9.13
         "isYesNo" to IsYesNoMethod(),
         // endregion
 
