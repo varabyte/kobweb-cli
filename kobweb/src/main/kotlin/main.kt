@@ -4,6 +4,7 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.enum
+import com.github.ajalt.clikt.parameters.types.file
 import com.varabyte.kobweb.cli.common.DEFAULT_BRANCH
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
 import com.varabyte.kobweb.cli.common.trySession
@@ -42,12 +43,14 @@ private fun ParameterHolder.layout() = option("-l", "--layout",
     help = "Specify the organizational layout of the site files.",
 ).enum<SiteLayout>().default(SiteLayout.KOBWEB)
 
+// We use `absoluteFile` so that the parent directories are directly accessible. This is necessary for the gradle
+// tooling api to be able to get the root project configuration if the kobweb module is a subproject.
 private fun ParameterHolder.path() = option("-p", "--path",
     help = "The path to the Kobweb application module.",
 )
-    .convert { File(it) }
-    .default(File("."), defaultForHelp = "the current directory")
-    .validate { require(it.exists()) { "Path \"$it\" does not exist" } }
+    .file(mustExist = true, canBeFile = false)
+    .convert { it.absoluteFile as File } // cast platform type to explicitly not nullable
+    .default(File(".").absoluteFile, defaultForHelp = "the current directory")
 
 private fun ParameterHolder.tty() = option("-t", "--tty",
     help = "Enable TTY support (default). Tries to run using ANSI support in an interactive mode if it can. Falls back to `--notty` otherwise."
