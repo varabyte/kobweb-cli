@@ -12,17 +12,18 @@ private enum class StopState {
     STOPPED,
 }
 
-fun handleStop(projectDir: File, useAnsi: Boolean) {
+fun handleStop(projectDir: File, useAnsi: Boolean, gradleArgs: List<String>) {
     // Server environment doesn't really matter for "stop". Still, let's default to prod because that's usually the case
     // where a server is left running for a long time.
     KobwebGradle(ServerEnvironment.PROD, projectDir).use { kobwebGradle ->
-        handleStop(useAnsi, kobwebGradle)
+        handleStop(useAnsi, kobwebGradle, gradleArgs)
     }
 }
 
 private fun handleStop(
     useAnsi: Boolean,
     kobwebGradle: KobwebGradle,
+    gradleArgs: List<String>,
 ) {
     var runInPlainMode = !useAnsi
 
@@ -45,7 +46,7 @@ private fun handleStop(
                     }
                 }
             }.run {
-                val stopServerProcess = kobwebGradle.stopServer()
+                val stopServerProcess = kobwebGradle.stopServer(gradleArgs)
                 stopServerProcess.lineHandler = ::handleConsoleOutput
                 stopServerProcess.waitFor()
                 stopState = StopState.STOPPED
@@ -68,6 +69,6 @@ private fun handleStop(
             return
         }
 
-        kobwebGradle.stopServer().also { it.waitFor() }
+        kobwebGradle.stopServer(gradleArgs).also { it.waitFor() }
     }
 }

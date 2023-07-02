@@ -81,16 +81,14 @@ class KobwebGradle(private val env: ServerEnvironment, val projectDir: File): Cl
     }
 
     fun gradlew(task: String, vararg args: String): Handle {
-        val finalArgs = args.toMutableList()
-        finalArgs.add("--stacktrace")
-
+        val finalArgs = args.toList() + "--stacktrace"
         val cancelToken = GradleConnector.newCancellationTokenSource()
         val handle = Handle(cancelToken)
         projectConnection.newBuild()
             .setStandardOutput(handle.HandleOutputStream(isError = false))
             .setStandardError(handle.HandleOutputStream(isError = true))
             .forTasks(task)
-            .withArguments(*finalArgs.toTypedArray())
+            .withArguments(finalArgs)
             .withCancellationToken(cancelToken.token())
             .run(object : ResultHandler<Void> {
                 private fun handleFinished() {
@@ -111,22 +109,27 @@ class KobwebGradle(private val env: ServerEnvironment, val projectDir: File): Cl
         return handle
     }
 
-    fun startServer(enableLiveReloading: Boolean, siteLayout: SiteLayout): Handle {
+    fun startServer(
+        enableLiveReloading: Boolean,
+        siteLayout: SiteLayout,
+        extraGradleArgs: List<String> = emptyList(),
+    ): Handle {
         val args = mutableListOf("-PkobwebEnv=$env", "-PkobwebRunLayout=$siteLayout")
         if (enableLiveReloading) {
             args.add("-t")
         }
+        args.addAll(extraGradleArgs)
         return gradlew("kobwebStart", *args.toTypedArray())
     }
 
-    fun stopServer(): Handle {
-        return gradlew("kobwebStop")
+    fun stopServer(extraGradleArgs: List<String> = emptyList()): Handle {
+        return gradlew("kobwebStop", *extraGradleArgs.toTypedArray())
     }
 
-    fun export(siteLayout: SiteLayout): Handle {
+    fun export(siteLayout: SiteLayout, extraGradleArgs: List<String> = emptyList()): Handle {
         // Even if we are exporting a non-Kobweb layout, we still want to start up a dev server using a Kobweb layout so
         // it looks for the source files in the right place.
-        return gradlew("kobwebExport", "-PkobwebReuseServer=false", "-PkobwebEnv=DEV", "-PkobwebRunLayout=KOBWEB", "-PkobwebBuildTarget=RELEASE", "-PkobwebExportLayout=$siteLayout")
+        return gradlew("kobwebExport", "-PkobwebReuseServer=false", "-PkobwebEnv=DEV", "-PkobwebRunLayout=KOBWEB", "-PkobwebBuildTarget=RELEASE", "-PkobwebExportLayout=$siteLayout", *extraGradleArgs.toTypedArray())
     }
 }
 
