@@ -21,14 +21,19 @@ private enum class ExportState {
     INTERRUPTED,
 }
 
-fun handleExport(projectDir: File, siteLayout: SiteLayout, useAnsi: Boolean) {
+fun handleExport(projectDir: File, siteLayout: SiteLayout, useAnsi: Boolean, gradleArgs: List<String>) {
     // exporting is a production-only action
     KobwebGradle(ServerEnvironment.PROD, projectDir).use { kobwebGradle ->
-        handleExport(siteLayout, useAnsi, kobwebGradle)
+        handleExport(siteLayout, useAnsi, kobwebGradle, gradleArgs)
     }
 }
 
-private fun handleExport(siteLayout: SiteLayout, useAnsi: Boolean, kobwebGradle: KobwebGradle) {
+private fun handleExport(
+    siteLayout: SiteLayout,
+    useAnsi: Boolean,
+    kobwebGradle: KobwebGradle,
+    gradleArgs: List<String>,
+) {
     var runInPlainMode = !useAnsi
 
     if (useAnsi && !trySession {
@@ -64,7 +69,7 @@ private fun handleExport(siteLayout: SiteLayout, useAnsi: Boolean, kobwebGradle:
             }
         }.run {
             val exportProcess = try {
-                kobwebGradle.export(siteLayout)
+                kobwebGradle.export(siteLayout, gradleArgs)
             }
             catch (ex: Exception) {
                 exception = ex
@@ -116,7 +121,7 @@ private fun handleExport(siteLayout: SiteLayout, useAnsi: Boolean, kobwebGradle:
         assertKobwebApplication(kobwebGradle.projectDir.toPath())
             .also { kobwebApplication -> kobwebApplication.assertServerNotAlreadyRunning() }
 
-        kobwebGradle.export(siteLayout).also { it.waitFor() }
+        kobwebGradle.export(siteLayout, gradleArgs).also { it.waitFor() }
         kobwebGradle.stopServer().also { it.waitFor() }
     }
 }

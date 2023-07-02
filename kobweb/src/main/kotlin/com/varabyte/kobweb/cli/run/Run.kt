@@ -43,12 +43,13 @@ fun handleRun(
     siteLayout: SiteLayout,
     useAnsi: Boolean,
     runInForeground: Boolean,
+    gradleArgs: List<String>,
 ) {
     val originalEnv = env
 
     @Suppress("NAME_SHADOWING") // We're intentionally intercepting the original value
     val env = env.takeIf { siteLayout != SiteLayout.STATIC } ?: ServerEnvironment.PROD
-    KobwebGradle(env, projectDir).use { kobwebGradle -> handleRun(originalEnv, env, siteLayout, useAnsi, runInForeground, kobwebGradle) }
+    KobwebGradle(env, projectDir).use { kobwebGradle -> handleRun(originalEnv, env, siteLayout, useAnsi, runInForeground, kobwebGradle, gradleArgs) }
 }
 
 private fun handleRun(
@@ -58,6 +59,7 @@ private fun handleRun(
     useAnsi: Boolean,
     runInForeground: Boolean,
     kobwebGradle: KobwebGradle,
+    gradleArgs: List<String>,
 ) {
     var runInPlainMode = !useAnsi
     if (useAnsi && !trySession {
@@ -153,7 +155,7 @@ private fun handleRun(
             }
         }.runUntilSignal {
             val startServerProcess = try {
-                kobwebGradle.startServer(enableLiveReloading = (env == ServerEnvironment.DEV), siteLayout)
+                kobwebGradle.startServer(enableLiveReloading = (env == ServerEnvironment.DEV), siteLayout, gradleArgs)
             }
             catch (ex: Exception) {
                 exception = ex
@@ -249,7 +251,7 @@ private fun handleRun(
 
         // If we're non-interactive, it means we just want to start the Kobweb server and exit without waiting for
         // for any additional changes. (This is essentially used when run in a web server environment)
-        kobwebGradle.startServer(enableLiveReloading = false, siteLayout).also { it.waitFor() }
+        kobwebGradle.startServer(enableLiveReloading = false, siteLayout, gradleArgs).also { it.waitFor() }
 
         val serverStateFile = ServerStateFile(kobwebApplication.kobwebFolder)
         runBlocking {
