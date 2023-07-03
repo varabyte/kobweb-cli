@@ -157,6 +157,14 @@ fun Session.newline() {
     section { textLine() }.run()
 }
 
+fun RunScope.informGradleStarting(onStarting: KobwebGradle.OnStartingEvent) {
+    aside {
+        black(isBright = true) {
+            textLine(onStarting.fullCommand)
+        }
+    }
+}
+
 fun RunScope.handleConsoleOutput(line: String, isError: Boolean) {
     aside {
         if (isError) red() else black(isBright = true)

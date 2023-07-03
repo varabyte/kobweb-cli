@@ -46,6 +46,7 @@ private fun handleStop(
                     }
                 }
             }.run {
+                kobwebGradle.onStarting = ::informGradleStarting
                 val stopServerProcess = kobwebGradle.stopServer(gradleArgs)
                 stopServerProcess.lineHandler = ::handleConsoleOutput
                 stopServerProcess.waitFor()

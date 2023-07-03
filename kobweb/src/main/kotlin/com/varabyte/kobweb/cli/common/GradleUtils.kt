@@ -29,6 +29,20 @@ import java.util.concurrent.TimeUnit
 import kotlin.text.StringBuilder
 
 class KobwebGradle(private val env: ServerEnvironment, val projectDir: File): Closeable {
+    class OnStartingEvent(val task: String, val args: List<String>) {
+        /**
+         * The full command that will be run, including the `gradlew` prefix.
+         */
+        val fullCommand get() = buildList {
+            add("$")
+            add("gradlew")
+            add(task)
+            addAll(args)
+        }.joinToString(" ")
+    }
+
+    var onStarting: (OnStartingEvent) -> Unit = { println(it.fullCommand) }
+
     private val gradleConnector = GradleConnector.newConnector().forProjectDirectory(projectDir).also {
         // The Gradle daemon spawned by the tooling API seems to stick around and not always get removed by
         // ./gradlew --stop for some reason? Adding a timeout seems to be the way that some projects deal with
@@ -84,6 +98,8 @@ class KobwebGradle(private val env: ServerEnvironment, val projectDir: File): Cl
         val finalArgs = args.toList() + "--stacktrace"
         val cancelToken = GradleConnector.newCancellationTokenSource()
         val handle = Handle(cancelToken)
+
+        onStarting(OnStartingEvent(task, finalArgs))
         projectConnection.newBuild()
             .setStandardOutput(handle.HandleOutputStream(isError = false))
             .setStandardError(handle.HandleOutputStream(isError = true))

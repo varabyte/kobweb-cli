@@ -68,6 +68,8 @@ private fun handleExport(
                 }
             }
         }.run {
+            kobwebGradle.onStarting = ::informGradleStarting
+
             val exportProcess = try {
                 kobwebGradle.export(siteLayout, gradleArgs)
             }

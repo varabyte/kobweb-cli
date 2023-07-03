@@ -16,12 +16,7 @@ import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.shutdown.addShutdownHook
-import com.varabyte.kotter.foundation.text.cyan
-import com.varabyte.kotter.foundation.text.green
-import com.varabyte.kotter.foundation.text.red
-import com.varabyte.kotter.foundation.text.text
-import com.varabyte.kotter.foundation.text.textLine
-import com.varabyte.kotter.foundation.text.yellow
+import com.varabyte.kotter.foundation.text.*
 import com.varabyte.kotter.foundation.timer.addTimer
 import kotlinx.coroutines.*
 import java.io.File
@@ -154,6 +149,7 @@ private fun handleRun(
                 }
             }
         }.runUntilSignal {
+            kobwebGradle.onStarting = ::informGradleStarting
             val startServerProcess = try {
                 kobwebGradle.startServer(enableLiveReloading = (env == ServerEnvironment.DEV), siteLayout, gradleArgs)
             }
