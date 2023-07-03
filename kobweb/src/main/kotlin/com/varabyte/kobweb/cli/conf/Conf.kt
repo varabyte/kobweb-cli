@@ -30,8 +30,7 @@ fun handleConf(query: String, projectDir: File) {
     }
     if (answer != null) {
         println(answer)
-    }
-    else {
+    } else {
         System.err.println("Invalid query")
     }
 }

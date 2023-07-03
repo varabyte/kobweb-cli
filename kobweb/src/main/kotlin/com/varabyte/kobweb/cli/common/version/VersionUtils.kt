@@ -1,7 +1,13 @@
 package com.varabyte.kobweb.cli.common.version
 
 import com.varabyte.kobweb.cli.common.template.KobwebTemplate
-import com.varabyte.kotter.foundation.text.*
+import com.varabyte.kotter.foundation.text.black
+import com.varabyte.kotter.foundation.text.cyan
+import com.varabyte.kotter.foundation.text.green
+import com.varabyte.kotter.foundation.text.text
+import com.varabyte.kotter.foundation.text.textLine
+import com.varabyte.kotter.foundation.text.white
+import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.runtime.Session
 import com.varabyte.kotterx.decorations.BorderCharacters
 import com.varabyte.kotterx.decorations.bordered
@@ -16,11 +22,12 @@ val kobwebCliVersion: SemVer.Parsed by lazy {
  * This assumes that the "minimumVersion" value in the template metadata was properly set. If it can't be parsed,
  * we silently hide it instead of crashing.
  */
-val KobwebTemplate.versionIsSupported: Boolean get() {
-    return (SemVer.parse(metadata.minimumVersion) as? SemVer.Parsed)?.let { minVersion ->
-        minVersion <= kobwebCliVersion
-    } ?: false
-}
+val KobwebTemplate.versionIsSupported: Boolean
+    get() {
+        return (SemVer.parse(metadata.minimumVersion) as? SemVer.Parsed)?.let { minVersion ->
+            minVersion <= kobwebCliVersion
+        } ?: false
+    }
 
 fun Session.reportUpdateAvailable(oldVersion: SemVer.Parsed, newVersion: SemVer.Parsed) {
     section {

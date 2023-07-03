@@ -5,8 +5,7 @@ class IsYesNoMethod : SingleArgMethodModel() {
         val valueLower = value.lowercase()
         return if (listOf("yes", "no", "true", "false").any { it.startsWith(valueLower) }) {
             null
-        }
-        else {
+        } else {
             "Answer must be yes or no"
         }
     }

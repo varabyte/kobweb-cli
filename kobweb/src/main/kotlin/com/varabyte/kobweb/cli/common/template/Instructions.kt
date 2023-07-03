@@ -127,7 +127,7 @@ sealed class Instruction(
     ) : Instruction() {
         init {
             file.requireNoDirectoryDots()
-            require(name.contains("/")) { "Rename value must be a filename only without directories. "}
+            require(name.contains("/")) { "Rename value must be a filename only without directories. " }
         }
     }
 

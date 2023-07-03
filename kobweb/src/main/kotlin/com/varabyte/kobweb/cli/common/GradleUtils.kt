@@ -26,19 +26,19 @@ import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.text.StringBuilder
 
-class KobwebGradle(private val env: ServerEnvironment, val projectDir: File): Closeable {
+class KobwebGradle(private val env: ServerEnvironment, val projectDir: File) : Closeable {
     class OnStartingEvent(val task: String, val args: List<String>) {
         /**
          * The full command that will be run, including the `gradlew` prefix.
          */
-        val fullCommand get() = buildList {
-            add("$")
-            add("gradlew")
-            add(task)
-            addAll(args)
-        }.joinToString(" ")
+        val fullCommand
+            get() = buildList {
+                add("$")
+                add("gradlew")
+                add(task)
+                addAll(args)
+            }.joinToString(" ")
     }
 
     var onStarting: (OnStartingEvent) -> Unit = { println(it.fullCommand) }
@@ -145,7 +145,15 @@ class KobwebGradle(private val env: ServerEnvironment, val projectDir: File): Cl
     fun export(siteLayout: SiteLayout, extraGradleArgs: List<String> = emptyList()): Handle {
         // Even if we are exporting a non-Kobweb layout, we still want to start up a dev server using a Kobweb layout so
         // it looks for the source files in the right place.
-        return gradlew("kobwebExport", "-PkobwebReuseServer=false", "-PkobwebEnv=DEV", "-PkobwebRunLayout=KOBWEB", "-PkobwebBuildTarget=RELEASE", "-PkobwebExportLayout=$siteLayout", *extraGradleArgs.toTypedArray())
+        return gradlew(
+            "kobwebExport",
+            "-PkobwebReuseServer=false",
+            "-PkobwebEnv=DEV",
+            "-PkobwebRunLayout=KOBWEB",
+            "-PkobwebBuildTarget=RELEASE",
+            "-PkobwebExportLayout=$siteLayout",
+            *extraGradleArgs.toTypedArray()
+        )
     }
 }
 
@@ -228,31 +236,37 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
 
     fun handleKey(key: Key): Boolean {
         var handled = true
-        when(key) {
+        when (key) {
             Keys.HOME -> {
                 startIndex = 0
                 stuckToEnd = false
             }
+
             Keys.END -> {
                 startIndex = maxIndex
                 stuckToEnd = true
             }
+
             Keys.UP -> {
                 startIndex = (startIndex - 1).coerceAtLeast(0)
                 stuckToEnd = false
             }
+
             Keys.PAGE_UP -> {
                 startIndex = (startIndex - pageSize).coerceAtLeast(0)
                 stuckToEnd = false
             }
+
             Keys.DOWN -> {
                 startIndex = (startIndex + 1).coerceAtMost(maxIndex)
                 stuckToEnd = (startIndex == maxIndex)
             }
+
             Keys.PAGE_DOWN -> {
                 startIndex = (startIndex + pageSize).coerceAtMost(maxIndex)
                 stuckToEnd = (startIndex == maxIndex)
             }
+
             else -> handled = false
         }
         return handled

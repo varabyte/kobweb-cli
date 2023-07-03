@@ -1,5 +1,5 @@
 [versions]
-clikt="3.5.2"
+clikt = "3.5.2"
 freemarker = "2.3.31"
 jreleaser = "1.6.0"
 kaml = "0.35.3"
@@ -13,7 +13,7 @@ shadow = "7.0.0"
 
 [libraries]
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
-freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker"}
+freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
 kobweb-common = { module = "com.varabyte.kobweb:kobweb-common", version.ref = "kobweb-libs" }
 kotter = { module = "com.varabyte.kotter:kotter", version.ref = "kotter" }

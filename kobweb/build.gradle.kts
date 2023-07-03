@@ -144,8 +144,7 @@ if (githubUsername != null && githubToken != null) {
                     consumerToken.set(token)
                     active.set(Active.RELEASE)
                 }
-            }
-            else {
+            } else {
                 println("SDKMAN! packager disabled on this machine since key and/or token are not defined")
             }
         }

@@ -22,6 +22,7 @@ private val GIT_VERSION_REGEX = Regex("""git.* ((\d+).(\d+).(\d+))""")
 
 sealed interface GitVersion {
     data class Parsed(val major: Int, val minor: Int, val patch: Int) : GitVersion
+
     // If we detect git (e.g. we're able to run the process), we should always move forward
     // if we can, even if we can't parse the version.
     data class Unparsed(val text: String) : GitVersion

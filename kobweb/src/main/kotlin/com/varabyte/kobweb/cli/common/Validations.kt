@@ -16,6 +16,7 @@ object Validations {
         return when {
             name != "." && !name.all { it.isLetterOrDigit() || it == '-' || it == '_' || it == '.' } ->
                 "Invalid name. Can only contain: letters, digits, dash, dots, and underscore"
+
             else -> null
         }
     }
@@ -30,6 +31,7 @@ object Validations {
                         else -> null
                     }
                 }
+
                 else -> null
             }
         }

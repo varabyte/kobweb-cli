@@ -6,7 +6,6 @@ import com.varabyte.kobweb.server.api.ServerStateFile
 import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.runtime.Session
-import com.varabyte.kotter.runtime.render.RenderScope
 import java.nio.file.Path
 
 fun assertKobwebApplication(path: Path): KobwebApplication {

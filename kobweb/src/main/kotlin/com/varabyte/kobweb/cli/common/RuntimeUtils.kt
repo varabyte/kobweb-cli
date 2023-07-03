@@ -11,8 +11,7 @@ fun Runtime.git(vararg args: String): Process {
 private fun defaultOutputHandler(line: String, isError: Boolean) {
     if (isError) {
         System.err.println(line)
-    }
-    else {
+    } else {
         println(line)
     }
 }

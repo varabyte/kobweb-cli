@@ -1,8 +1,19 @@
-import com.github.ajalt.clikt.core.*
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.NoOpCliktCommand
+import com.github.ajalt.clikt.core.ParameterHolder
+import com.github.ajalt.clikt.core.UsageError
+import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.CliktHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
-import com.github.ajalt.clikt.parameters.options.*
+import com.github.ajalt.clikt.parameters.options.convert
+import com.github.ajalt.clikt.parameters.options.counted
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.deprecated
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import com.varabyte.kobweb.cli.common.DEFAULT_BRANCH
@@ -35,32 +46,38 @@ private enum class Mode {
     DUMB
 }
 
-private fun ParameterHolder.mode() = option("-m", "--mode",
+private fun ParameterHolder.mode() = option(
+    "-m", "--mode",
     help = "If interactive, runs in an ANSI-enabled terminal expecting user input. If dumb, use plain output only."
 ).enum<Mode>().deprecated("Warning: Option --mode is deprecated. Use --tty or --notty instead.")
 
-private fun ParameterHolder.layout() = option("-l", "--layout",
+private fun ParameterHolder.layout() = option(
+    "-l", "--layout",
     help = "Specify the organizational layout of the site files.",
 ).enum<SiteLayout>().default(SiteLayout.KOBWEB)
 
 // We use `absoluteFile` so that the parent directories are directly accessible. This is necessary for the gradle
 // tooling api to be able to get the root project configuration if the kobweb module is a subproject.
-private fun ParameterHolder.path() = option("-p", "--path",
+private fun ParameterHolder.path() = option(
+    "-p", "--path",
     help = "The path to the Kobweb application module.",
 )
     .file(mustExist = true, canBeFile = false)
     .convert { it.absoluteFile as File } // cast platform type to explicitly not nullable
     .default(File(".").absoluteFile, defaultForHelp = "the current directory")
 
-private fun ParameterHolder.tty() = option("-t", "--tty",
+private fun ParameterHolder.tty() = option(
+    "-t", "--tty",
     help = "Enable TTY support (default). Tries to run using ANSI support in an interactive mode if it can. Falls back to `--notty` otherwise."
 ).counted().validate { require(it <= 1) { "Cannot specify `--tty` more than once" } }
 
-private fun ParameterHolder.notty() = option("--notty",
+private fun ParameterHolder.notty() = option(
+    "--notty",
     help = "Explicitly disable TTY support. In this case, runs in plain mode, logging output sequentially without listening for user input, which is useful for CI environments or Docker containers.",
 ).counted().validate { require(it <= 1) { "Cannot specify `--notty` more than once" } }
 
-private fun ParameterHolder.gradleArgs() = option("--gradle",
+private fun ParameterHolder.gradleArgs() = option(
+    "--gradle",
     help = "Arguments that will be passed to the main Gradle command. Surround with quotes for multiple arguments or if there are spaces."
 )
     .convert { args -> args.split(' ').filter { it.isNotBlank() } }
@@ -210,10 +227,15 @@ fun main(args: Array<String>) {
     }
 
     class Run : KobwebSubcommand(help = "Run a Kobweb server") {
-        val env by option(help = "Whether the server should run in development mode or production.").enum<ServerEnvironment>().default(ServerEnvironment.DEV)
+        val env by option(help = "Whether the server should run in development mode or production.").enum<ServerEnvironment>()
+            .default(ServerEnvironment.DEV)
         val tty by tty()
         val notty by notty()
-        val foreground by option("-f", "--foreground", help = "Keep kobweb running in the foreground. This value is ignored unless in --notty mode.").flag(default = false)
+        val foreground by option(
+            "-f",
+            "--foreground",
+            help = "Keep kobweb running in the foreground. This value is ignored unless in --notty mode."
+        ).flag(default = false)
         val mode by mode()
         val layout by layout()
         val path by path()

@@ -23,6 +23,7 @@ sealed interface SemVer {
 
         override fun toString(): String = "$major.$minor.$patch"
     }
+
     class Unparsed(val text: String) : SemVer {
         override fun toString() = text
     }
