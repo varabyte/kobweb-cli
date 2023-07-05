@@ -309,11 +309,13 @@ private fun handleRun(
         }
 
         if (runInForeground) {
+            println()
+            println("Press CTRL-C to exit this application and shutdown the server.")
             Runtime.getRuntime().addShutdownHook(Thread {
                 if (serverStateFile.content?.isRunning() == false) return@Thread
                 ServerRequestsFile(kobwebApplication.kobwebFolder).enqueueRequest(ServerRequest.Stop())
-                println(); println()
-                println("CTRL-C received. Sending a message to kill the server.")
+                println()
+                println("CTRL-C received. Sent a message to stop the server.")
                 println("You may still have to run 'kobweb stop' if it didn't work.")
                 System.out.flush()
             })
