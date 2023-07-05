@@ -102,7 +102,7 @@ if (githubUsername != null && githubToken != null) {
         release {
             github {
                 repoOwner.set("varabyte")
-                tagName.set("cli-v{{projectVersion}}")
+                tagName.set("v{{projectVersion}}")
                 username.set(githubUsername)
                 token.set(githubToken)
 
