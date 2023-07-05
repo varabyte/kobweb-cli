@@ -76,9 +76,14 @@ private fun ParameterHolder.notty() = option(
     help = "Explicitly disable TTY support. In this case, runs in plain mode, logging output sequentially without listening for user input, which is useful for CI environments or Docker containers.",
 ).counted().validate { require(it <= 1) { "Cannot specify `--notty` more than once" } }
 
-private fun ParameterHolder.gradleArgs() = option(
-    "--gradle",
-    help = "Arguments that will be passed to the main Gradle command. Surround with quotes for multiple arguments or if there are spaces."
+private fun ParameterHolder.gradleArgs(suffix: String? = null) = option(
+    "--gradle" + (suffix?.let { "-$it" } ?: ""),
+    help =
+    if (suffix == null) {
+        "Arguments that will be passed into every Gradle call issued by this command (some Kobweb commands have multiple phases), useful for common configurations like `--quiet`. Surround with quotes for multiple arguments or if there are spaces."
+    } else {
+        "Arguments that will be passed to the Gradle call associated with the \"$suffix\" phase specifically."
+    }
 )
     .convert { args -> args.split(' ').filter { it.isNotBlank() } }
     .default(emptyList(), defaultForHelp = "none")
@@ -218,11 +223,20 @@ fun main(args: Array<String>) {
         val mode by mode()
         val layout by layout()
         val path by path()
-        val gradleArgs by gradleArgs()
+        val gradleArgsCommon by gradleArgs()
+        val gradleArgsExport by gradleArgs("export")
+        val gradleArgsStop by gradleArgs("stop")
 
         override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty, mode)
         override fun doRun() {
-            handleExport(path, layout, shouldUseAnsi(tty, notty, mode), gradleArgs)
+            handleExport(
+                path,
+                layout,
+                shouldUseAnsi(tty, notty, mode),
+                gradleArgsCommon,
+                gradleArgsExport,
+                gradleArgsStop
+            )
         }
     }
 
@@ -239,11 +253,22 @@ fun main(args: Array<String>) {
         val mode by mode()
         val layout by layout()
         val path by path()
-        val gradleArgs by gradleArgs()
+        val gradleArgsCommon by gradleArgs()
+        val gradleArgsStart by gradleArgs("start")
+        val gradleArgsStop by gradleArgs("stop")
 
         override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty, mode)
         override fun doRun() {
-            handleRun(env, path, layout, shouldUseAnsi(tty, notty, mode), foreground, gradleArgs)
+            handleRun(
+                env,
+                path,
+                layout,
+                shouldUseAnsi(tty, notty, mode),
+                foreground,
+                gradleArgsCommon,
+                gradleArgsStart,
+                gradleArgsStop
+            )
         }
     }
 
@@ -252,14 +277,15 @@ fun main(args: Array<String>) {
         val notty by notty()
         val mode by mode()
         val path by path()
-        val gradleArgs by gradleArgs()
+        val gradleArgsCommon by gradleArgs()
+        val gradleArgsStop by gradleArgs("stop")
 
         // Don't check for an upgrade on create, because the user probably just installed kobweb anyway, and the update
         // message kind of overwhelms the instructions to start running the app.
         override fun shouldCheckForUpgrade() = false
 
         override fun doRun() {
-            handleStop(path, shouldUseAnsi(tty, notty, mode), gradleArgs)
+            handleStop(path, shouldUseAnsi(tty, notty, mode), gradleArgsCommon, gradleArgsStop)
         }
     }
 

@@ -62,7 +62,9 @@ fun handleRun(
     siteLayout: SiteLayout,
     useAnsi: Boolean,
     runInForeground: Boolean,
-    gradleArgs: List<String>,
+    gradleArgsCommon: List<String>,
+    gradleArgsStart: List<String>,
+    gradleArgsStop: List<String>,
 ) {
     val originalEnv = env
 
@@ -76,7 +78,9 @@ fun handleRun(
             useAnsi,
             runInForeground,
             kobwebGradle,
-            gradleArgs
+            gradleArgsCommon,
+            gradleArgsStart,
+            gradleArgsStop,
         )
     }
 }
@@ -88,7 +92,9 @@ private fun handleRun(
     useAnsi: Boolean,
     runInForeground: Boolean,
     kobwebGradle: KobwebGradle,
-    gradleArgs: List<String>,
+    gradleArgsCommon: List<String>,
+    gradleArgsStart: List<String>,
+    gradleArgsStop: List<String>,
 ) {
     var runInPlainMode = !useAnsi
     if (useAnsi && !trySession {
@@ -194,7 +200,7 @@ private fun handleRun(
                     kobwebGradle.startServer(
                         enableLiveReloading = (env == ServerEnvironment.DEV),
                         siteLayout,
-                        gradleArgs
+                        gradleArgsCommon + gradleArgsStart,
                     )
                 } catch (ex: Exception) {
                     exception = ex
@@ -237,7 +243,7 @@ private fun handleRun(
                                 startServerProcess.cancel()
                                 startServerProcess.waitFor()
 
-                                val stopServerProcess = kobwebGradle.stopServer()
+                                val stopServerProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop)
                                 stopServerProcess.lineHandler = ::handleConsoleOutput
                                 stopServerProcess.waitFor()
 
@@ -289,7 +295,11 @@ private fun handleRun(
 
         // If we're non-interactive, it means we just want to start the Kobweb server and exit without waiting for
         // for any additional changes. (This is essentially used when run in a web server environment)
-        kobwebGradle.startServer(enableLiveReloading = false, siteLayout, gradleArgs).also { it.waitFor() }
+        kobwebGradle.startServer(enableLiveReloading = false, siteLayout, gradleArgsCommon + gradleArgsStart)
+            .also { it.waitFor() }
+        if (gradleArgsStop.isNotEmpty()) {
+            println("Warning: --gradle-stop is ignored when running in non-interactive mode (which does not stop the server).")
+        }
 
         val serverStateFile = ServerStateFile(kobwebApplication.kobwebFolder)
         runBlocking {

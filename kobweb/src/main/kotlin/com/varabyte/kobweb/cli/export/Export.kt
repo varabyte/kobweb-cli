@@ -34,10 +34,17 @@ private enum class ExportState {
     INTERRUPTED,
 }
 
-fun handleExport(projectDir: File, siteLayout: SiteLayout, useAnsi: Boolean, gradleArgs: List<String>) {
+fun handleExport(
+    projectDir: File,
+    siteLayout: SiteLayout,
+    useAnsi: Boolean,
+    gradleArgsCommon: List<String>,
+    gradleArgsExport: List<String>,
+    gradleArgsStop: List<String>
+) {
     // exporting is a production-only action
     KobwebGradle(ServerEnvironment.PROD, projectDir).use { kobwebGradle ->
-        handleExport(siteLayout, useAnsi, kobwebGradle, gradleArgs)
+        handleExport(siteLayout, useAnsi, kobwebGradle, gradleArgsCommon, gradleArgsExport, gradleArgsStop)
     }
 }
 
@@ -45,7 +52,9 @@ private fun handleExport(
     siteLayout: SiteLayout,
     useAnsi: Boolean,
     kobwebGradle: KobwebGradle,
-    gradleArgs: List<String>,
+    gradleArgsCommon: List<String>,
+    gradleArgsExport: List<String>,
+    gradleArgsStop: List<String>
 ) {
     var runInPlainMode = !useAnsi
 
@@ -84,7 +93,7 @@ private fun handleExport(
                 kobwebGradle.onStarting = ::informGradleStarting
 
                 val exportProcess = try {
-                    kobwebGradle.export(siteLayout, gradleArgs)
+                    kobwebGradle.export(siteLayout, gradleArgsCommon + gradleArgsExport)
                 } catch (ex: Exception) {
                     exception = ex
                     exportState = ExportState.INTERRUPTED
@@ -119,7 +128,7 @@ private fun handleExport(
                 }
                 check(exportState in listOf(ExportState.FINISHING, ExportState.CANCELLING))
 
-                val stopProcess = kobwebGradle.stopServer()
+                val stopProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop)
                 stopProcess.lineHandler = ::handleConsoleOutput
                 stopProcess.waitFor()
 
@@ -134,7 +143,7 @@ private fun handleExport(
         assertKobwebApplication(kobwebGradle.projectDir.toPath())
             .also { kobwebApplication -> kobwebApplication.assertServerNotAlreadyRunning() }
 
-        kobwebGradle.export(siteLayout, gradleArgs).also { it.waitFor() }
-        kobwebGradle.stopServer().also { it.waitFor() }
+        kobwebGradle.export(siteLayout, gradleArgsCommon + gradleArgsExport).also { it.waitFor() }
+        kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).also { it.waitFor() }
     }
 }
