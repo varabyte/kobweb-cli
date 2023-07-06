@@ -113,7 +113,7 @@ private fun handleExport(
                 }
 
                 onKeyPressed {
-                    if (exportState == ExportState.EXPORTING && key == Keys.Q) {
+                    if (exportState == ExportState.EXPORTING && (key == Keys.Q || key == Keys.Q_UPPER)) {
                         cancelReason = "User requested cancellation"
                         exportProcess.cancel()
                         exportState = ExportState.CANCELLING

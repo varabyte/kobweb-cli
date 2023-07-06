@@ -226,7 +226,7 @@ private fun handleRun(
                 }
 
                 onKeyPressed {
-                    if (key in listOf(Keys.EOF, Keys.Q)) {
+                    if (key in listOf(Keys.EOF, Keys.Q, Keys.Q_UPPER)) {
                         if (runState == RunState.STARTING) {
                             runState = RunState.STOPPING
                             CoroutineScope(Dispatchers.IO).launch {
