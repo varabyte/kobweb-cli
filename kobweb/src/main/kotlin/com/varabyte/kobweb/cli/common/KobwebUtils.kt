@@ -55,7 +55,7 @@ fun Session.isServerAlreadyRunningFor(project: KobwebApplication): Boolean {
 fun Session.showStaticSiteLayoutWarning() {
     section {
         // TODO(#123): Link to URL doc link when available.
-        yellow { textLine("Static site layout chosen. Some Kobweb features like server routes are unavailable in this configuration.") }
+        yellow { textLine("Static site layout chosen. Some Kobweb features like server api routes / api streams are unavailable in this configuration.") }
         textLine()
     }.run()
 }
