@@ -1,7 +1,7 @@
 [versions]
 clikt = "3.5.2"
 freemarker = "2.3.31"
-jreleaser = "1.7.0"
+jreleaser = "1.10.0"
 kaml = "0.35.3"
 kobweb-cli = "0.9.14-SNAPSHOT"
 kobweb-libs = "0.13.7"
