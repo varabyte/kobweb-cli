@@ -92,7 +92,15 @@ fun handleCreate(repo: String, branch: String, templateName: String?) = session 
                     .sortedBy { templateFile -> templateFile.folder }
                     .sortedByDescending { templateFile -> templateFile.template.metadata.shouldHighlight }
 
-                var selectedIndex by liveVarOf(0)
+                var selectedIndex by liveVarOf(
+                    // If the user typed in a template name and we couldn't find it, maybe we can find what they were
+                    // intending to use (e.g. "clock" will match "examples/clock")
+                    if (templateName != null) {
+                        templateRoots.indexOfFirst { templateFile ->
+                            templateFile.getName(tempDir).contains(templateName)
+                        }.takeIf { it >= 0 } ?: 0
+                    } else 0
+                )
                 var finished by liveVarOf(false)
                 section {
                     bold { textLine("Press ENTER to select a project to instantiate:") }
