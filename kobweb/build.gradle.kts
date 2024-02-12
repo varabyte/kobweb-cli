@@ -80,17 +80,19 @@ if (githubUsername != null && githubToken != null) {
                 homepage.set("https://kobweb.varabyte.com/")
                 documentation.set("https://kobweb.varabyte.com/docs")
                 license.set("http://www.apache.org/licenses/LICENSE-2.0")
+                bugTracker.set("https://github.com/varabyte/kobweb/issues")
             }
-            description.set("Set up and manage your Compose HTML app")
+            description.set("Set up and manage your Kobweb (Compose HTML) app")
             longDescription.set(
                 """
-                Kobweb CLI provides commands to handle the tedious parts of building a Compose HTML app, including
-                project setup and configuration.
+                Kobweb CLI provides commands to handle the tedious parts of building a Kobweb (Compose HTML) app,
+                including project setup and configuration.
             """.trimIndent()
             )
+            vendor.set("Varabyte")
             authors.set(listOf("David Herman"))
             license.set("Apache-2.0")
-            copyright.set("Copyright © 2022 Varabyte. All rights reserved.")
+            copyright.set("Copyright © 2024 Varabyte. All rights reserved.")
 
             // Set the Java version explicitly, even though in theory this value should be coming from our root
             // build.gradle file, but it does not seem to when I run "jreleaserPublish" from the command line.
@@ -106,7 +108,8 @@ if (githubUsername != null && githubToken != null) {
                 username.set(githubUsername)
                 token.set(githubToken)
 
-                // Tags and releases are handled manually via the GitHub UI for now. TODO(#104)
+                // Tags and releases are handled manually via the GitHub UI for now.
+                // TODO(https://github.com/varabyte/kobweb/issues/104)
                 skipTag.set(true)
                 skipRelease.set(true)
 
