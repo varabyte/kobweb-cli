@@ -24,10 +24,13 @@ import java.io.ByteArrayOutputStream
 import java.io.Closeable
 import java.io.File
 import java.io.OutputStream
+import java.nio.file.Path
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-class KobwebGradle(private val env: ServerEnvironment, val projectDir: File) : Closeable {
+class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Closeable {
+    constructor(env: ServerEnvironment, projectDir: Path) : this(env, projectDir.toFile())
+
     class OnStartingEvent(val task: String, val args: List<String>) {
         /**
          * The full command that will be run, including the `gradlew` prefix.

@@ -29,12 +29,6 @@ private enum class ProcessingState {
     SUCCEEDED
 }
 
-fun RenderScope.textError(text: String) {
-    red { text("✗") }
-    text(' ')
-    textLine(text)
-}
-
 fun RenderScope.cmd(name: String) {
     val parts = name.split(' ')
     parts.forEachIndexed { i, part ->
@@ -81,18 +75,46 @@ fun Session.processing(message: String, blockingWork: () -> Unit): Boolean {
     return state == ProcessingState.SUCCEEDED
 }
 
-fun Session.informError(message: String) {
+fun RenderScope.textErrorPrefix() {
+    red { text("✗") }
+    text(' ')
+}
+
+fun RenderScope.textError(message: String) {
+    textErrorPrefix()
+    textLine(message)
+}
+
+fun Session.informError(block: RenderScope.() -> Unit) {
     section {
-        textError(message)
+        textErrorPrefix()
+        block()
+    }.run()
+}
+
+fun Session.informError(message: String) {
+    informError { textLine(message) }
+}
+
+fun RenderScope.textInfoPrefix() {
+    yellow { text('!') }
+    text(' ')
+}
+
+fun RenderScope.textInfo(message: String) {
+    textInfoPrefix()
+    textLine(message)
+}
+
+fun Session.informInfo(block: RenderScope.() -> Unit) {
+    section {
+        textInfoPrefix()
+        this.block()
     }.run()
 }
 
 fun Session.informInfo(message: String) {
-    section {
-        yellow { text('!') }
-        text(' ')
-        textLine(message)
-    }.run()
+    informInfo { textLine(message) }
 }
 
 fun Session.warn(message: String) {

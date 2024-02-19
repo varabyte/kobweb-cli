@@ -2,10 +2,9 @@ package com.varabyte.kobweb.cli.export
 
 import com.varabyte.kobweb.cli.common.Anims
 import com.varabyte.kobweb.cli.common.GradleAlertBundle
-import com.varabyte.kobweb.cli.common.KobwebGradle
-import com.varabyte.kobweb.cli.common.assertKobwebApplication
+import com.varabyte.kobweb.cli.common.KobwebExecutionEnvironment
 import com.varabyte.kobweb.cli.common.assertServerNotAlreadyRunning
-import com.varabyte.kobweb.cli.common.findKobwebApplication
+import com.varabyte.kobweb.cli.common.findKobwebExecutionEnvironment
 import com.varabyte.kobweb.cli.common.handleConsoleOutput
 import com.varabyte.kobweb.cli.common.handleGradleOutput
 import com.varabyte.kobweb.cli.common.informGradleStarting
@@ -43,23 +42,36 @@ fun handleExport(
     gradleArgsStop: List<String>
 ) {
     // exporting is a production-only action
-    KobwebGradle(ServerEnvironment.PROD, projectDir).use { kobwebGradle ->
-        handleExport(siteLayout, useAnsi, kobwebGradle, gradleArgsCommon, gradleArgsExport, gradleArgsStop)
+    findKobwebExecutionEnvironment(
+        ServerEnvironment.PROD,
+        projectDir.toPath(),
+        useAnsi
+    )?.use { kobwebExecutionEnvironment ->
+        handleExport(
+            siteLayout,
+            useAnsi,
+            kobwebExecutionEnvironment,
+            gradleArgsCommon,
+            gradleArgsExport,
+            gradleArgsStop
+        )
     }
 }
 
 private fun handleExport(
     siteLayout: SiteLayout,
     useAnsi: Boolean,
-    kobwebGradle: KobwebGradle,
+    kobwebExecutionEnvironment: KobwebExecutionEnvironment,
     gradleArgsCommon: List<String>,
     gradleArgsExport: List<String>,
     gradleArgsStop: List<String>
 ) {
+    val kobwebApplication = kobwebExecutionEnvironment.application
+    val kobwebGradle = kobwebExecutionEnvironment.gradle
+
     var runInPlainMode = !useAnsi
 
     if (useAnsi && !trySession {
-            val kobwebApplication = findKobwebApplication(kobwebGradle.projectDir.toPath()) ?: return@trySession
             if (isServerAlreadyRunningFor(kobwebApplication)) return@trySession
 
             newline() // Put space between user prompt and eventual first line of Gradle output
@@ -140,8 +152,7 @@ private fun handleExport(
     }
 
     if (runInPlainMode) {
-        assertKobwebApplication(kobwebGradle.projectDir.toPath())
-            .also { kobwebApplication -> kobwebApplication.assertServerNotAlreadyRunning() }
+        kobwebApplication.assertServerNotAlreadyRunning()
 
         kobwebGradle.export(siteLayout, gradleArgsCommon + gradleArgsExport).also { it.waitFor() }
         kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).also { it.waitFor() }
