@@ -148,7 +148,7 @@ fun Session.findKobwebApplication(path: Path): KobwebApplication? {
                 section {
                     textLine()
                     textInfoPrefix()
-                    textLine("Multiple Kobweb applications were found under the current directory. Choose one or press ESC to cancel.")
+                    textLine("A Kobweb application was not found here, but multiple Kobweb applications were found under the current directory. Choose one or press Q to cancel.")
                     textLine()
                     candidates.forEachIndexed { index, candidate ->
                         text(if (index == candidateIndex) '>' else ' ')
