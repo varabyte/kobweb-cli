@@ -267,9 +267,7 @@ private fun handleRun(
                         serverStateFile.content?.takeIf { it.isRunning() }?.let {
                             serverState = it
                             runState = RunState.RUNNING
-                            return@coroutineScope
-                        }
-                        delay(300)
+                        } ?: run { delay(300) }
                     }
                 }
 
