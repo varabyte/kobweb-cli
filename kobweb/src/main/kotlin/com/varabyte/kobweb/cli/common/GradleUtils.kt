@@ -57,7 +57,13 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
     }
     private val projectConnection: ProjectConnection = gradleConnector.connect()
 
+    private val handles = mutableListOf<Handle>()
+
     override fun close() {
+        // Cancel any in-flight tasks (especially continuous ones). Otherwise, `projectConnection.close()` can hang.
+        handles.toList().forEach { it.cancel() }
+        handles.clear()
+
         projectConnection.close()
         gradleConnector.disconnect()
     }
@@ -111,6 +117,7 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             .withCancellationToken(cancelToken.token())
             .run(object : ResultHandler<Void> {
                 private fun handleFinished() {
+                    handles.remove(handle)
                     handle.latch.countDown()
                 }
 
@@ -125,7 +132,7 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
                 }
             })
 
-        return handle
+        return handle.also { handles.add(it) }
     }
 
     fun startServer(
