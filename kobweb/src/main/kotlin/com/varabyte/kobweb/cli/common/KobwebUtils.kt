@@ -17,10 +17,9 @@ import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.runtime.Session
 import java.io.Closeable
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.relativeTo
+import kotlin.io.path.absolutePathString
 import kotlin.streams.toList
 
 /**
@@ -77,10 +76,20 @@ fun KobwebApplication.isServerAlreadyRunning(): Boolean {
     }
 }
 
-fun Session.findKobwebApplication(path: Path): KobwebApplication? {
-    val foundPath: Path? = if (!KobwebFolder.isFoundIn(path)) {
+fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
+    // When we report the location of the target path to the user, we want to do it relative from where the user ran the
+    // kobweb command from. But this might fail (e.g. on Windows running the command on one drive targeting another),
+    // so in that case, just append the "this" path to the base path, because within the context of this function,
+    // `this` will always be a child of `basePath`.
+    fun Path.relativeToCurrentDirectoryOrBasePath(): Path {
+        check(this.absolutePathString().startsWith(basePath.absolutePathString()))
+        return this.relativeToCurrentDirectory() ?: basePath.resolve(this)
+    }
+
+
+    val foundPath: Path? = if (!KobwebFolder.isFoundIn(basePath)) {
         val candidates = try {
-            Files.walk(path, 2)
+            Files.walk(basePath, 2)
                 .filter(Files::isDirectory)
                 .filter { KobwebFolder.isFoundIn(it) }
                 .toList()
@@ -99,12 +108,12 @@ fun Session.findKobwebApplication(path: Path): KobwebApplication? {
                     textLine()
                     textInfoPrefix()
                     text("A Kobweb application was not found here, but one was found in ")
-                    cyan { text(candidate.relativeTo(path).toString()) }
+                    cyan { text(candidate.relativeToCurrentDirectoryOrBasePath().toString()) }
                     textLine(".")
                     textLine()
 
                     text("Use ")
-                    cyan { text(candidate.relativeTo(path).toString()) }
+                    cyan { text(candidate.relativeToCurrentDirectoryOrBasePath().toString()) }
                     text(" instead? ")
 
                     bold {
@@ -148,12 +157,12 @@ fun Session.findKobwebApplication(path: Path): KobwebApplication? {
                 section {
                     textLine()
                     textInfoPrefix()
-                    textLine("A Kobweb application was not found here, but multiple Kobweb applications were found under the current directory. Choose one or press Q to cancel.")
+                    textLine("A Kobweb application was not found here, but multiple Kobweb applications were found in nested folders. Choose one or press Q to cancel.")
                     textLine()
                     candidates.forEachIndexed { index, candidate ->
                         text(if (index == candidateIndex) '>' else ' ')
                         text(' ')
-                        cyan { textLine(candidate.relativeTo(path).toString()) }
+                        cyan { textLine(candidate.relativeToCurrentDirectoryOrBasePath().toString()) }
                     }
                     textLine()
                 }.runUntilSignal {
@@ -181,15 +190,15 @@ fun Session.findKobwebApplication(path: Path): KobwebApplication? {
             null
         }
     } else {
-        path
+        basePath
     }
 
     val foundApplication = try {
         foundPath?.let { KobwebApplication(it) }?.also { application ->
-            if (application.path != path) {
+            if (application.path != basePath) {
                 informInfo {
-                    text("Running as ")
-                    cyan { text("kobweb run -p ${application.path.relativeTo(path)}") }
+                    text("Running: ")
+                    cyan { text("kobweb run -p ${application.path.relativeToCurrentDirectoryOrBasePath()}") }
                 }
             }
         }

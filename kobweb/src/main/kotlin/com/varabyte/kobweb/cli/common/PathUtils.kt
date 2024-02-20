@@ -1,5 +1,9 @@
 package com.varabyte.kobweb.cli.common
 
+import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.io.path.relativeTo
+
 object PathUtils {
     /**
      * Given a path, e.g. "myproject", return it OR the path with a number appended on it if there are already existing
@@ -30,4 +34,16 @@ fun String.wildcardToRegex(): Regex {
         .replace("||", ".*")
 
     return Regex("^$regexStr\$")
+}
+
+/**
+ * Given a path, return it relative to the current directory.
+ *
+ * This might not be possible, e.g. if in Windows and the path have different drives, so in that case, this will return
+ * null.
+ */
+fun Path.relativeToCurrentDirectory(): Path? = try {
+    this.relativeTo(Paths.get(".").toAbsolutePath())
+} catch (ex: Exception) {
+    null
 }
