@@ -5,7 +5,6 @@ import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.text.bold
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
-import com.varabyte.kotter.foundation.text.white
 import com.varabyte.kotter.runtime.MainRenderScope
 import com.varabyte.kotter.runtime.RunScope
 import com.varabyte.kotter.runtime.Section
@@ -22,26 +21,24 @@ private fun RenderScope.wrapIf(condition: Boolean, before: Char, after: Char, bl
     text(if (condition) after else ' ')
 }
 
-private fun RenderScope.choiceColor(isDefault: Boolean) {
-    white(isBright = isDefault)
+private fun RenderScope.choiceStyle(isDefault: Boolean) {
+    if (isDefault) bold()
 }
 
 // NOTE: In this current (lazy) implementation, only one yes-no block is allowed per section.
 // We can revisit this later if we need something more complex.
 fun MainRenderScope.yesNo(isYes: Boolean, default: Boolean = true) {
     data[YesNoStateKey] = isYes
-    bold {
-        wrapIf(isYes, '[', ']') {
-            choiceColor(default)
-            text("Yes")
-        }
-        text(' ')
-        wrapIf(!isYes, '[', ']') {
-            choiceColor(!default)
-            text("No")
-        }
-        textLine()
+    wrapIf(isYes, '[', ']') {
+        choiceStyle(default)
+        text("Yes")
     }
+    text(' ')
+    wrapIf(!isYes, '[', ']') {
+        choiceStyle(!default)
+        text("No")
+    }
+    textLine()
 }
 
 class YesNoScope(val isYes: Boolean, val shouldAccept: Boolean = false)
