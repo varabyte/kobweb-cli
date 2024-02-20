@@ -12,6 +12,7 @@ import com.varabyte.kotter.foundation.input.onInputEntered
 import com.varabyte.kotter.foundation.input.runUntilInputEntered
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.render.aside
+import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.session
 import com.varabyte.kotter.foundation.text.black
 import com.varabyte.kotter.foundation.text.bold
@@ -126,6 +127,31 @@ fun Session.warn(message: String) {
     }.run()
 }
 
+private fun RenderScope.promptQuestion(query: String) {
+    cyan { text('?') }
+    text(' ')
+    bold { textLine("$query ") }
+    text("> ")
+}
+
+fun Session.askYesNo(
+    query: String,
+    defaultAnswer: Boolean,
+): Boolean {
+    var answer by liveVarOf(defaultAnswer)
+    section {
+        promptQuestion(query)
+        yesNo(answer, defaultAnswer)
+        textLine()
+    }.runUntilSignal {
+        onYesNoChanged(valueOnCancel = null) {
+            answer = isYes
+            if (shouldAccept) signal()
+        }
+    }
+    return answer
+}
+
 /**
  * @param validateAnswer Take a string (representing a user's answer), returning a new string which represents an error
  *   message, or null if no error.
@@ -138,10 +164,7 @@ fun Session.queryUser(
     var answer by liveVarOf("")
     var error by liveVarOf<String?>(null)
     section {
-        cyan { text('?') }
-        text(' ')
-        bold { textLine("$query ") }
-        text("> ")
+        promptQuestion(query)
         if (answer.isNotEmpty()) {
             textLine(answer)
         } else {

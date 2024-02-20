@@ -3,7 +3,9 @@ package com.varabyte.kobweb.cli.common
 import com.varabyte.kobweb.cli.common.kotter.informError
 import com.varabyte.kobweb.cli.common.kotter.informInfo
 import com.varabyte.kobweb.cli.common.kotter.newline
+import com.varabyte.kobweb.cli.common.kotter.onYesNoChanged
 import com.varabyte.kobweb.cli.common.kotter.textInfoPrefix
+import com.varabyte.kobweb.cli.common.kotter.yesNo
 import com.varabyte.kobweb.common.error.KobwebException
 import com.varabyte.kobweb.project.KobwebApplication
 import com.varabyte.kobweb.project.KobwebFolder
@@ -14,7 +16,6 @@ import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.session
-import com.varabyte.kotter.foundation.text.bold
 import com.varabyte.kotter.foundation.text.cyan
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
@@ -120,35 +121,12 @@ fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
                     cyan { text(candidate.relativeToCurrentDirectoryOrBasePath().toString()) }
                     text(" instead? ")
 
-                    bold {
-                        if (shouldUseNewLocation) {
-                            textLine("[Yes] No ")
-                        } else {
-                            textLine(" Yes [No]")
-                        }
-                    }
+                    yesNo(shouldUseNewLocation)
                     textLine()
                 }.runUntilSignal {
-                    onKeyPressed {
-                        when (key) {
-                            Keys.LEFT, Keys.RIGHT -> shouldUseNewLocation = !shouldUseNewLocation
-                            Keys.HOME -> shouldUseNewLocation = true
-                            Keys.END -> shouldUseNewLocation = false
-                            // Q included because Kobweb users might be used to pressing it in other contexts
-                            Keys.ESC, Keys.Q, Keys.Q_UPPER -> {
-                                shouldUseNewLocation = false; signal()
-                            }
-
-                            Keys.Y, Keys.Y_UPPER -> {
-                                shouldUseNewLocation = true; signal()
-                            }
-
-                            Keys.N, Keys.N_UPPER -> {
-                                shouldUseNewLocation = false; signal()
-                            }
-
-                            Keys.ENTER -> signal()
-                        }
+                    onYesNoChanged {
+                        shouldUseNewLocation = isYes
+                        if (shouldAccept) signal()
                     }
                 }
 

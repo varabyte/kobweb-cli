@@ -1,5 +1,6 @@
 package com.varabyte.kobweb.cli.create.freemarker
 
+import com.varabyte.kobweb.cli.common.kotter.askYesNo
 import com.varabyte.kobweb.cli.common.kotter.informInfo
 import com.varabyte.kobweb.cli.common.kotter.processing
 import com.varabyte.kobweb.cli.common.kotter.queryUser
@@ -92,15 +93,29 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
                 }
 
                 is Instruction.QueryVar -> {
-                    val default = inst.default?.process(cfg, model)
-                    val answer = queryUser(inst.prompt, default, validateAnswer = { value ->
-                        (model[inst.validation] as? TemplateMethodModelEx)?.exec(listOf(value))?.toString()
-                    })
-                    val finalAnswer = inst.transform?.let { transform ->
-                        val modelWithValue = model.toMutableMap()
-                        modelWithValue["value"] = answer
-                        transform.process(cfg, modelWithValue)
-                    } ?: answer
+                    // Useful hack: In the original version of this code, yes/no questions were handled by asking users
+                    // to pass in the string "yes/no" which got converted to a boolean. We can check if the validation
+                    // function is the "IsYesNo" validation method and, if so, use our new, more user-friendly,
+                    // impossible-to-misuse yes/no widget instead.
+                    val templateMethodModel = model[inst.validation] as? TemplateMethodModelEx
+                    val finalAnswer = if (templateMethodModel is IsYesNoMethod) {
+                        val answerBool = askYesNo(
+                            inst.prompt,
+                            YesNoToBoolMethod().exec((inst.default ?: true).toString()).toBoolean()
+                        )
+                        YesNoToBoolMethod().exec(answerBool.toString())
+                    } else {
+                        val default = inst.default?.process(cfg, model)
+                        val answer = queryUser(inst.prompt, default, validateAnswer = { value ->
+                            (model[inst.validation] as? TemplateMethodModelEx)?.exec(listOf(value))?.toString()
+                        })
+
+                        inst.transform?.let { transform ->
+                            val modelWithValue = model.toMutableMap()
+                            modelWithValue["value"] = answer
+                            transform.process(cfg, modelWithValue)
+                        } ?: answer
+                    }
                     model[inst.name] = finalAnswer
                 }
 
