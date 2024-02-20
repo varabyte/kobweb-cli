@@ -99,11 +99,13 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
                     // impossible-to-misuse yes/no widget instead.
                     val templateMethodModel = model[inst.validation] as? TemplateMethodModelEx
                     val finalAnswer = if (templateMethodModel is IsYesNoMethod) {
+                        val yesNoToBool = YesNoToBoolMethod()
+
                         val answerBool = askYesNo(
                             inst.prompt,
-                            YesNoToBoolMethod().exec((inst.default ?: true).toString()).toBoolean()
+                            yesNoToBool.exec((inst.default ?: true).toString()).toBoolean()
                         )
-                        YesNoToBoolMethod().exec(answerBool.toString())
+                        yesNoToBool.exec(answerBool.toString())
                     } else {
                         val default = inst.default?.process(cfg, model)
                         val answer = queryUser(inst.prompt, default, validateAnswer = { value ->
