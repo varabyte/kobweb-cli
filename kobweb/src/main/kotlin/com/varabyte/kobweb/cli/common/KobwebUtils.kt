@@ -17,6 +17,7 @@ import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.runtime.Session
 import java.io.Closeable
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.relativeTo
@@ -78,10 +79,16 @@ fun KobwebApplication.isServerAlreadyRunning(): Boolean {
 
 fun Session.findKobwebApplication(path: Path): KobwebApplication? {
     val foundPath: Path? = if (!KobwebFolder.isFoundIn(path)) {
-        val candidates = Files.walk(path, 2)
-            .filter(Files::isDirectory)
-            .filter { KobwebFolder.isFoundIn(it) }
-            .toList()
+        val candidates = try {
+            Files.walk(path, 2)
+                .filter(Files::isDirectory)
+                .filter { KobwebFolder.isFoundIn(it) }
+                .toList()
+        } catch(ex: Exception) {
+            // If this happens, we definitely don't have access to projects to recommend to users.
+            // The user is probably running kobweb in a privileged location, perhaps.
+            emptyList()
+        }
 
         if (candidates.isNotEmpty()) {
             if (candidates.size == 1) {
