@@ -1,8 +1,8 @@
 package com.varabyte.kobweb.cli.create.freemarker
 
-import com.varabyte.kobweb.cli.common.informInfo
-import com.varabyte.kobweb.cli.common.processing
-import com.varabyte.kobweb.cli.common.queryUser
+import com.varabyte.kobweb.cli.common.kotter.informInfo
+import com.varabyte.kobweb.cli.common.kotter.processing
+import com.varabyte.kobweb.cli.common.kotter.queryUser
 import com.varabyte.kobweb.cli.common.template.Instruction
 import com.varabyte.kobweb.cli.common.wildcardToRegex
 import com.varabyte.kobweb.cli.create.freemarker.methods.FileToPackageMethod

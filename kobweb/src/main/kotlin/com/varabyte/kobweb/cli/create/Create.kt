@@ -2,15 +2,15 @@ package com.varabyte.kobweb.cli.create
 
 import com.varabyte.kobweb.cli.common.PathUtils
 import com.varabyte.kobweb.cli.common.Validations
-import com.varabyte.kobweb.cli.common.cmd
 import com.varabyte.kobweb.cli.common.findGit
 import com.varabyte.kobweb.cli.common.handleFetch
-import com.varabyte.kobweb.cli.common.informInfo
-import com.varabyte.kobweb.cli.common.newline
-import com.varabyte.kobweb.cli.common.queryUser
+import com.varabyte.kobweb.cli.common.kotter.cmd
+import com.varabyte.kobweb.cli.common.kotter.informInfo
+import com.varabyte.kobweb.cli.common.kotter.newline
+import com.varabyte.kobweb.cli.common.kotter.queryUser
+import com.varabyte.kobweb.cli.common.kotter.textError
 import com.varabyte.kobweb.cli.common.template.KobwebTemplateFile
 import com.varabyte.kobweb.cli.common.template.getName
-import com.varabyte.kobweb.cli.common.textError
 import com.varabyte.kobweb.cli.common.version.versionIsSupported
 import com.varabyte.kobweb.cli.create.freemarker.FreemarkerState
 import com.varabyte.kobweb.cli.create.freemarker.methods.IsNotEmptyMethod

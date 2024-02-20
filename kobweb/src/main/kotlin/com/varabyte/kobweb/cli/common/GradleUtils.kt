@@ -1,5 +1,6 @@
 package com.varabyte.kobweb.cli.common
 
+import com.varabyte.kobweb.cli.common.kotter.handleConsoleOutput
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.SiteLayout
 import com.varabyte.kotter.foundation.collections.liveListOf

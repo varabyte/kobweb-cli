@@ -1,5 +1,8 @@
-package com.varabyte.kobweb.cli.common
+package com.varabyte.kobweb.cli.common.kotter
 
+import com.varabyte.kobweb.cli.common.Anims
+import com.varabyte.kobweb.cli.common.KobwebGradle
+import com.varabyte.kobweb.cli.common.Validations
 import com.varabyte.kotter.foundation.anim.text
 import com.varabyte.kotter.foundation.anim.textAnimOf
 import com.varabyte.kotter.foundation.input.Completions

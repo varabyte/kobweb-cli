@@ -1,5 +1,6 @@
 package com.varabyte.kobweb.cli.common
 
+import com.varabyte.kobweb.cli.common.kotter.informError
 import com.varabyte.kobweb.common.error.KobwebException
 import com.varabyte.kotter.runtime.Session
 import kotlinx.coroutines.CompletableDeferred

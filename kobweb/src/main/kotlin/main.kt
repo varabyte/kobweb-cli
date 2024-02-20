@@ -18,7 +18,7 @@ import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import com.varabyte.kobweb.cli.common.DEFAULT_BRANCH
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
-import com.varabyte.kobweb.cli.common.trySession
+import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.version.SemVer
 import com.varabyte.kobweb.cli.common.version.kobwebCliVersion
 import com.varabyte.kobweb.cli.common.version.reportUpdateAvailable

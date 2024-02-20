@@ -4,9 +4,9 @@ import com.varabyte.kobweb.cli.common.DEFAULT_BRANCH
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
 import com.varabyte.kobweb.cli.common.findGit
 import com.varabyte.kobweb.cli.common.handleFetch
+import com.varabyte.kobweb.cli.common.kotter.textError
 import com.varabyte.kobweb.cli.common.template.KobwebTemplateFile
 import com.varabyte.kobweb.cli.common.template.getName
-import com.varabyte.kobweb.cli.common.textError
 import com.varabyte.kobweb.cli.common.version.versionIsSupported
 import com.varabyte.kotter.foundation.session
 import com.varabyte.kotter.foundation.text.cyan
