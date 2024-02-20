@@ -136,7 +136,7 @@ private fun RenderScope.promptQuestion(query: String) {
 
 fun Session.askYesNo(
     query: String,
-    defaultAnswer: Boolean,
+    defaultAnswer: Boolean = true,
 ): Boolean {
     var answer by liveVarOf(defaultAnswer)
     section {

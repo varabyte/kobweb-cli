@@ -4,6 +4,7 @@ import com.varabyte.kobweb.cli.common.PathUtils
 import com.varabyte.kobweb.cli.common.Validations
 import com.varabyte.kobweb.cli.common.findGit
 import com.varabyte.kobweb.cli.common.handleFetch
+import com.varabyte.kobweb.cli.common.kotter.askYesNo
 import com.varabyte.kobweb.cli.common.kotter.cmd
 import com.varabyte.kobweb.cli.common.kotter.informInfo
 import com.varabyte.kobweb.cli.common.kotter.newline
@@ -14,7 +15,6 @@ import com.varabyte.kobweb.cli.common.template.getName
 import com.varabyte.kobweb.cli.common.version.versionIsSupported
 import com.varabyte.kobweb.cli.create.freemarker.FreemarkerState
 import com.varabyte.kobweb.cli.create.freemarker.methods.IsNotEmptyMethod
-import com.varabyte.kobweb.cli.create.freemarker.methods.YesNoToBoolMethod
 import com.varabyte.kobweb.project.KobwebFolder
 import com.varabyte.kotter.foundation.input.Keys
 import com.varabyte.kotter.foundation.input.onKeyPressed
@@ -177,18 +177,13 @@ fun handleCreate(repo: String, branch: String, templateName: String?) = session 
     val projectFolder = dstPath.name
 
     newline()
-    queryUser("Would you like to initialize git for this project?", "yes").let { initializeAnswer ->
-        val yesNoToBool = YesNoToBoolMethod()
-        val isNotEmpty = IsNotEmptyMethod()
-
-        val shouldInitialize = yesNoToBool.exec(initializeAnswer).toBoolean()
+    askYesNo("Would you like to initialize git for this project?").let { shouldInitialize ->
         if (shouldInitialize) {
             gitClient.init(dstPath)
 
-            val commitAnswer = queryUser("Would you like to create an initial commit?", "yes")
-            val shouldCommit = yesNoToBool.exec(commitAnswer).toBoolean()
-
+            val shouldCommit = askYesNo("Would you like to create an initial commit?")
             if (shouldCommit) {
+                val isNotEmpty = IsNotEmptyMethod()
                 val commitMessage = queryUser(
                     "Commit message:",
                     "Initial commit",
