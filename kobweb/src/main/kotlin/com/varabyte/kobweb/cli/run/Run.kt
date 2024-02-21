@@ -4,6 +4,7 @@ import com.varabyte.kobweb.cli.common.Anims
 import com.varabyte.kobweb.cli.common.GradleAlertBundle
 import com.varabyte.kobweb.cli.common.KobwebExecutionEnvironment
 import com.varabyte.kobweb.cli.common.assertServerNotAlreadyRunning
+import com.varabyte.kobweb.cli.common.findKobwebConfIn
 import com.varabyte.kobweb.cli.common.findKobwebExecutionEnvironment
 import com.varabyte.kobweb.cli.common.handleGradleOutput
 import com.varabyte.kobweb.cli.common.isServerAlreadyRunningFor
@@ -15,7 +16,6 @@ import com.varabyte.kobweb.cli.common.kotter.warn
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
 import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
 import com.varabyte.kobweb.common.navigation.RoutePrefix
-import com.varabyte.kobweb.project.conf.KobwebConfFile
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.ServerRequest
 import com.varabyte.kobweb.server.api.ServerRequestsFile
@@ -111,7 +111,7 @@ private fun handleRun(
             if (isServerAlreadyRunningFor(kobwebApplication)) return@trySession
 
             val kobwebFolder = kobwebApplication.kobwebFolder
-            val conf = KobwebConfFile(kobwebFolder).content!!
+            val conf = findKobwebConfIn(kobwebFolder) ?: return@trySession
 
             newline() // Put space between user prompt and eventual first line of Gradle output
 

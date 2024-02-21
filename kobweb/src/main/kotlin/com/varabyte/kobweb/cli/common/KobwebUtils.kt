@@ -9,6 +9,8 @@ import com.varabyte.kobweb.cli.common.kotter.yesNo
 import com.varabyte.kobweb.common.error.KobwebException
 import com.varabyte.kobweb.project.KobwebApplication
 import com.varabyte.kobweb.project.KobwebFolder
+import com.varabyte.kobweb.project.conf.KobwebConf
+import com.varabyte.kobweb.project.conf.KobwebConfFile
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.ServerStateFile
 import com.varabyte.kotter.foundation.input.Keys
@@ -47,6 +49,11 @@ fun assertKobwebApplication(path: Path): KobwebApplication {
     } catch (ex: KobwebException) {
         throw KobwebException(NOT_KOBWEB_APPLICATION_ERROR)
     }
+}
+
+fun assertKobwebConfIn(kobwebFolder: KobwebFolder): KobwebConf {
+    return KobwebConfFile(kobwebFolder).content
+        ?: throw KobwebException("A .kobweb folder's `conf.yaml` file seems to have been deleted at some point. This is not expected and Kobweb cannot run without it. Consider restoring your `conf.yaml` file from source control history if possible, or create a new, temporary Kobweb project from scratch and copy its `conf.yaml` file over, modifying it as necessary.")
 }
 
 fun assertKobwebExecutionEnvironment(env: ServerEnvironment, path: Path): KobwebExecutionEnvironment {
@@ -219,6 +226,17 @@ fun Session.isServerAlreadyRunningFor(project: KobwebApplication): Boolean {
         true
     }
 }
+
+fun Session.findKobwebConfIn(kobwebFolder: KobwebFolder): KobwebConf? {
+    return try {
+        assertKobwebConfIn(kobwebFolder)
+    } catch (ex: KobwebException) {
+        informError(ex.message!!)
+        null
+    }
+}
+
+fun Session.findKobwebConfFor(kobwebApplication: KobwebApplication) = findKobwebConfIn(kobwebApplication.kobwebFolder)
 
 fun Session.showStaticSiteLayoutWarning() {
     section {
