@@ -290,7 +290,7 @@ fun main(args: Array<String>) {
     }
 
     class Conf : KobwebSubcommand(help = "Query a value from the .kobweb/conf.yaml file (e.g. \"server.port\")") {
-        val query by argument(help = "The query to search the .kobweb/conf.yaml for (e.g. \"server.port\").")
+        val query by argument(help = "The query to search the .kobweb/conf.yaml for (e.g. \"server.port\"). If not specified, this command will list all possible queries.").optional()
         val path by path()
 
         override fun doRun() {

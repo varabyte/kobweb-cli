@@ -28,9 +28,8 @@ private fun YamlNode.collectValues(): Map<String, String> {
     return scalars
 }
 
-fun handleConf(query: String, projectDir: File) {
+fun handleConf(query: String?, projectDir: File) {
     val kobwebApplication = assertKobwebApplication(projectDir.toPath())
-    if (query.isBlank()) return // No query? OK I guess we're done
 
     // Even though we don't use its return value, we use this as a side effect to show a useful error message to users
     // if the conf.yaml file is not found.
@@ -42,20 +41,28 @@ fun handleConf(query: String, projectDir: File) {
     val yamlNode = Yaml.default.parseToYamlNode(KobwebConfFile(kobwebApplication.kobwebFolder).path.readText())
 
     val yamlValues = yamlNode.collectValues()
-    val answer = yamlValues[query]
 
-    if (answer != null) {
-        println(answer)
+    fun StringBuilder.appendPossibleQueries() {
+        appendLine("Possible queries are:")
+        yamlValues.keys.sorted().forEach { key ->
+            append(" • ")
+            appendLine(key)
+        }
+    }
+
+    if (query.isNullOrBlank()) {
+        println(buildString { appendPossibleQueries() })
     } else {
-        System.err.println(buildString {
-            appendLine("Invalid query.")
-            appendLine()
-            appendLine("Possible queries are:")
+        val answer = yamlValues[query]
 
-            yamlValues.keys.sorted().forEach { key ->
-                append(" • ")
-                appendLine(key)
-            }
-        })
+        if (answer != null) {
+            println(answer)
+        } else {
+            System.err.println(buildString {
+                appendLine("Invalid query.")
+                appendLine()
+                appendPossibleQueries()
+            })
+        }
     }
 }
