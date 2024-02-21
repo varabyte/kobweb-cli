@@ -14,14 +14,22 @@ import kotlin.io.path.relativeTo
  *   specified, this name will come from the template's path to the root. See also: [KobwebTemplateFile.getName].
  * @property shouldHighlight This template is considered important and should be called out
  *   separately when all templates for a repository are listed.
- * @property minimumVersion The minimum version of the Kobweb CLI that this template is compatible with.
+ * @property minimumVersion The minimum version of the Kobweb CLI that this template is compatible with. Should be in
+ *   the format "x.y.z" (e.g. "1.2.3"). If not specified, there is no minimum version.
+ * @property maximumVersion The maximum version of the Kobweb CLI that should open this template. Should be in the
+ *   format "x.y.z" (e.g. "1.2.3"). If not specified, there is no maximum version. Including a maximum version can
+ *   allow us in the future to create alternate templates for different versions of the CLI. For example, let's say we
+ *   add a new feature in CLI 1.2.3 that we want to use in a template. We can set the existing (soon legacy) template
+ *   to max-version 1.2.2 and the new template to min-version 1.2.3. In this way, old CLIs will only see the old
+ *   template and new CLIs will only see the new one.
  */
 @Serializable
 class Metadata(
     val description: String,
     val name: String? = null,
     val shouldHighlight: Boolean = false,
-    val minimumVersion: String = "0.0.0"
+    val minimumVersion: String? = null,
+    val maximumVersion: String? = null,
 )
 
 @Serializable

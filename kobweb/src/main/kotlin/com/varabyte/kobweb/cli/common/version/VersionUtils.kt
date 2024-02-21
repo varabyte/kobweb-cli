@@ -22,11 +22,20 @@ val kobwebCliVersion: SemVer.Parsed by lazy {
  * This assumes that the "minimumVersion" value in the template metadata was properly set. If it can't be parsed,
  * we silently hide it instead of crashing.
  */
+@Suppress("RedundantIf") // Code is more readable when symmetric
 val KobwebTemplate.versionIsSupported: Boolean
     get() {
-        return (SemVer.parse(metadata.minimumVersion) as? SemVer.Parsed)?.let { minVersion ->
-            minVersion <= kobwebCliVersion
-        } ?: false
+        val minVersion = metadata.minimumVersion?.let { SemVer.parse(it) as? SemVer.Parsed }
+        if (minVersion != null && minVersion > kobwebCliVersion) {
+            return false
+        }
+
+        val maxVersion = metadata.maximumVersion?.let { SemVer.parse(it) as? SemVer.Parsed }
+        if (maxVersion != null && maxVersion < kobwebCliVersion) {
+            return false
+        }
+
+        return true
     }
 
 fun Session.reportUpdateAvailable(oldVersion: SemVer.Parsed, newVersion: SemVer.Parsed) {
