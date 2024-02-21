@@ -6,7 +6,6 @@ import com.varabyte.kobweb.cli.common.findGit
 import com.varabyte.kobweb.cli.common.handleFetch
 import com.varabyte.kobweb.cli.common.kotter.askYesNo
 import com.varabyte.kobweb.cli.common.kotter.cmd
-import com.varabyte.kobweb.cli.common.kotter.informInfo
 import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.queryUser
 import com.varabyte.kobweb.cli.common.kotter.textError
@@ -141,9 +140,12 @@ fun handleCreate(repo: String, branch: String, templateName: String?) = session 
     val defaultFolderName =
         PathUtils.generateEmptyPathName(templateFile.getName(tempDir).substringAfterLast('/'))
 
-    informInfo("The folder you choose here will be created under your current path.")
-    informInfo("You can enter `.` if you want to use the current directory.")
-    val dstPath = queryUser("Specify a folder for your project:", defaultFolderName) { answer ->
+    val dstPath =
+        queryUser(
+            "Specify a folder for your project:",
+            "The folder you choose here will be created under your current path.\nYou can enter `.` if you want to use the current directory.",
+            defaultFolderName
+        ) { answer ->
         Validations.isFileName(answer) ?: Validations.isEmptyPath(answer)
     }.let { answer ->
         Path.of(if (answer != ".") answer else "").toAbsolutePath()

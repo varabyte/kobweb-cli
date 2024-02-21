@@ -105,12 +105,13 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
 
                         val answerBool = askYesNo(
                             inst.prompt,
+                            inst.note,
                             yesNoToBool.exec((inst.default ?: true).toString()).toBoolean()
                         )
                         yesNoToBool.exec(answerBool.toString())
                     } else {
                         val default = inst.default?.process(cfg, model)
-                        val answer = queryUser(inst.prompt, default, validateAnswer = { value ->
+                        val answer = queryUser(inst.prompt, inst.note, default, validateAnswer = { value ->
                             (model[inst.validation] as? TemplateMethodModelEx)?.exec(listOf(value))?.toString()
                         })
 

@@ -48,9 +48,11 @@ sealed class Instruction(
      *
      * @param name The name of this variable, which can be referenced in freemarker expressions later.
      * @param prompt The prompt to show the user.
+     * @param note If set, added as extra contextual information after the the prompt but before the area where the user
+     *   types their answer.
      * @param default The default value to use if nothing is typed. This value will be processed by freemarker and can
      *   be dynamic!
-     * @param validation One of a set of built in Kobweb validators. See the "Validators" region inside
+     * @param validation One of a set of built-in Kobweb validators. See the "Validators" region inside
      *   [FreemarkerState.model] for the list.
      * @param transform Logic to convert a user's answer before assigning it to a variable, e.g. "Yes" -> "true".
      *   An automatic variable called "value" will be provided for the scope of this function. See the "Converters"
@@ -61,6 +63,7 @@ sealed class Instruction(
     class QueryVar(
         val name: String,
         val prompt: String,
+        val note: String? = null,
         val default: String? = null,
         val validation: String? = null,
         val transform: String? = null,

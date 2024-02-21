@@ -127,10 +127,11 @@ fun Session.warn(message: String) {
     }.run()
 }
 
-private fun RenderScope.promptQuestion(query: String) {
+private fun RenderScope.promptQuestion(query: String, extra: RenderScope.() -> Unit = {}) {
     cyan { text('?') }
     text(' ')
     bold { textLine("$query ") }
+    extra()
     text("> ")
 }
 
@@ -138,9 +139,19 @@ fun Session.askYesNo(
     query: String,
     defaultAnswer: Boolean = true,
 ): Boolean {
+    return askYesNo(query, null, defaultAnswer)
+}
+
+fun Session.askYesNo(
+    query: String,
+    note: String?,
+    defaultAnswer: Boolean = true
+): Boolean {
     var answer by liveVarOf(defaultAnswer)
     section {
-        promptQuestion(query)
+        promptQuestion(query) {
+            note?.split("\n")?.forEach { textInfo(it) }
+        }
         yesNo(answer, defaultAnswer)
         textLine()
     }.runUntilSignal {
@@ -161,10 +172,21 @@ fun Session.queryUser(
     defaultAnswer: String?,
     validateAnswer: (String) -> String? = Validations::isNotEmpty
 ): String {
+    return queryUser(query, null, defaultAnswer, validateAnswer)
+}
+
+fun Session.queryUser(
+    query: String,
+    note: String?,
+    defaultAnswer: String?,
+    validateAnswer: (String) -> String? = Validations::isNotEmpty
+): String {
     var answer by liveVarOf("")
     var error by liveVarOf<String?>(null)
     section {
-        promptQuestion(query)
+        promptQuestion(query) {
+            note?.split("\n")?.forEach { textInfo(it) }
+        }
         if (answer.isNotEmpty()) {
             textLine(answer)
         } else {
