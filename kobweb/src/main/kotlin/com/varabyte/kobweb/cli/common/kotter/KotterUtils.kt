@@ -105,9 +105,12 @@ fun RenderScope.textInfoPrefix() {
     text(' ')
 }
 
+// Note: Newlines in text will create multiple "!" lines
 fun RenderScope.textInfo(message: String) {
-    textInfoPrefix()
-    textLine(message)
+    message.split("\n").forEach {line ->
+        textInfoPrefix()
+        textLine(line)
+    }
 }
 
 fun Session.informInfo(block: RenderScope.() -> Unit) {
@@ -117,8 +120,11 @@ fun Session.informInfo(block: RenderScope.() -> Unit) {
     }.run()
 }
 
+// Note: Newlines in text will create multiple "!" lines
 fun Session.informInfo(message: String) {
-    informInfo { textLine(message) }
+    section {
+        textInfo(message)
+    }.run()
 }
 
 fun Session.warn(message: String) {
@@ -150,7 +156,7 @@ fun Session.askYesNo(
     var answer by liveVarOf(defaultAnswer)
     section {
         promptQuestion(query) {
-            note?.split("\n")?.forEach { textInfo(it) }
+            note?.let { textInfo(it) }
         }
         yesNo(answer, defaultAnswer)
         textLine()
@@ -185,7 +191,7 @@ fun Session.queryUser(
     var error by liveVarOf<String?>(null)
     section {
         promptQuestion(query) {
-            note?.split("\n")?.forEach { textInfo(it) }
+            note?.let { textInfo(it) }
         }
         if (answer.isNotEmpty()) {
             textLine(answer)
