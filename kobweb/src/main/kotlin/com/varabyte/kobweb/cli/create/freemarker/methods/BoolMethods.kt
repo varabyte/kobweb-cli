@@ -57,3 +57,9 @@ class IsPositiveNumberMethod : SingleArgMethodModel() {
         }
     }
 }
+
+class NotMethod : SingleArgMethodModel() {
+    override fun exec(value: String): String {
+        return (!value.toBoolean()).toString()
+    }
+}

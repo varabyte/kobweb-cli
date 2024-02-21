@@ -15,6 +15,7 @@ import com.varabyte.kobweb.cli.create.freemarker.methods.IsPackageMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.IsPositiveIntMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.IsPositiveNumberMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.IsYesNoMethod
+import com.varabyte.kobweb.cli.create.freemarker.methods.NotMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.PackageToPathMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.YesNoToBoolMethod
 import com.varabyte.kobweb.common.error.KobwebException
@@ -60,6 +61,7 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
         // region Converters
         "fileToTitle" to FileToTitleMethod(),
         "fileToPackage" to FileToPackageMethod(),
+        "not" to NotMethod(),
         "packageToPath" to PackageToPathMethod(),
         "yesNoToBool" to YesNoToBoolMethod(),
         // endregion
