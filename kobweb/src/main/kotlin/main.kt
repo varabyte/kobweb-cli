@@ -10,7 +10,6 @@ import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.counted
 import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.deprecated
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.validate
@@ -37,19 +36,6 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
-
-private enum class Mode {
-    /** Expect a user at an ANSI-enabled terminal interacting with the command */
-    INTERACTIVE,
-
-    /** Expect the command to run in a constrained environment, e.g. a server, without user interaction */
-    DUMB
-}
-
-private fun ParameterHolder.mode() = option(
-    "-m", "--mode",
-    help = "If interactive, runs in an ANSI-enabled terminal expecting user input. If dumb, use plain output only."
-).enum<Mode>().deprecated("Warning: Option --mode is deprecated. Use --tty or --notty instead.")
 
 private fun ParameterHolder.layout() = option(
     "-l", "--layout",
@@ -88,11 +74,6 @@ private fun ParameterHolder.gradleArgs(suffix: String? = null) = option(
     .convert { args -> args.split(' ').filter { it.isNotBlank() } }
     .default(emptyList(), defaultForHelp = "none")
 
-private fun Mode.toTtyParam() = when (this) {
-    Mode.INTERACTIVE -> "--tty"
-    Mode.DUMB -> "--notty"
-}
-
 /**
  * Resolve the current way to determine if we should use ANSI support.
  *
@@ -104,19 +85,15 @@ private fun Mode.toTtyParam() = when (this) {
  * Even though we expect them to be only set once or never.
  */
 @Suppress("NAME_SHADOWING")
-private fun shouldUseAnsi(tty: Int, notty: Int, mode: Mode?): Boolean {
+private fun shouldUseAnsi(tty: Int, notty: Int): Boolean {
     val tty = true.takeIf { tty > 0 }
     val notty = true.takeIf { notty > 0 }
 
     if (tty != null && notty != null) {
         throw UsageError("Both `--tty` and `--notty` are specified simultaneously.")
     }
-    if ((tty != null || notty != null) && mode != null) {
-        println("Warning: Both `--mode` and `--[no]tty` are specified. Ignoring `--mode`.")
-    }
     return tty
         ?: notty?.not()
-        ?: @Suppress("NAME_SHADOWING") mode?.let { mode -> mode == Mode.INTERACTIVE }
         ?: true
 }
 
@@ -220,19 +197,18 @@ fun main(args: Array<String>) {
     class Export : KobwebSubcommand(help = "Generate a static version of a Kobweb app / site") {
         val tty by tty()
         val notty by notty()
-        val mode by mode()
         val layout by layout()
         val path by path()
         val gradleArgsCommon by gradleArgs()
         val gradleArgsExport by gradleArgs("export")
         val gradleArgsStop by gradleArgs("stop")
 
-        override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty, mode)
+        override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty)
         override fun doRun() {
             handleExport(
                 path,
                 layout,
-                shouldUseAnsi(tty, notty, mode),
+                shouldUseAnsi(tty, notty),
                 gradleArgsCommon,
                 gradleArgsExport,
                 gradleArgsStop
@@ -250,20 +226,19 @@ fun main(args: Array<String>) {
             "--foreground",
             help = "Keep kobweb running in the foreground. This value is ignored unless in --notty mode."
         ).flag(default = false)
-        val mode by mode()
         val layout by layout()
         val path by path()
         val gradleArgsCommon by gradleArgs()
         val gradleArgsStart by gradleArgs("start")
         val gradleArgsStop by gradleArgs("stop")
 
-        override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty, mode)
+        override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty)
         override fun doRun() {
             handleRun(
                 env,
                 path,
                 layout,
-                shouldUseAnsi(tty, notty, mode),
+                shouldUseAnsi(tty, notty),
                 foreground,
                 gradleArgsCommon,
                 gradleArgsStart,
@@ -275,7 +250,6 @@ fun main(args: Array<String>) {
     class Stop : KobwebSubcommand(help = "Stop a Kobweb server if one is running") {
         val tty by tty()
         val notty by notty()
-        val mode by mode()
         val path by path()
         val gradleArgsCommon by gradleArgs()
         val gradleArgsStop by gradleArgs("stop")
@@ -285,7 +259,7 @@ fun main(args: Array<String>) {
         override fun shouldCheckForUpgrade() = false
 
         override fun doRun() {
-            handleStop(path, shouldUseAnsi(tty, notty, mode), gradleArgsCommon, gradleArgsStop)
+            handleStop(path, shouldUseAnsi(tty, notty), gradleArgsCommon, gradleArgsStop)
         }
     }
 
