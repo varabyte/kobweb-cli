@@ -57,14 +57,10 @@ fun assertKobwebConfIn(kobwebFolder: KobwebFolder): KobwebConf {
 }
 
 fun assertKobwebExecutionEnvironment(env: ServerEnvironment, path: Path): KobwebExecutionEnvironment {
-    return try {
-        KobwebExecutionEnvironment(
-            KobwebApplication(path),
-            KobwebGradle(env, path),
-        )
-    } catch (ex: KobwebException) {
-        throw KobwebException(NOT_KOBWEB_APPLICATION_ERROR)
-    }
+    return KobwebExecutionEnvironment(
+        assertKobwebApplication(path),
+        KobwebGradle(env, path),
+    )
 }
 
 fun KobwebFolder.assertServerNotAlreadyRunning() {
