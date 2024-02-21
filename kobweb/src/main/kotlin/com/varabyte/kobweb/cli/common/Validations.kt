@@ -1,6 +1,6 @@
 package com.varabyte.kobweb.cli.common
 
-import com.varabyte.kobweb.common.lang.isKeyword
+import com.varabyte.kobweb.common.lang.isHardKeyword
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -45,7 +45,7 @@ object Validations {
         }
 
         value.split(".").forEach { part ->
-            if (part.isKeyword()) {
+            if (part.isHardKeyword()) {
                 return "\"$part\" is a reserved keyword in Kotlin and cannot be used. Suggestion: Use \"${part}_\" instead."
             } else if (part.first().isDigit()) {
                 return "Package parts cannot start with digits. Suggestion: Use \"_$part\" instead."

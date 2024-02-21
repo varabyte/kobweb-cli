@@ -1,7 +1,7 @@
 package com.varabyte.kobweb.cli.common.template
 
 import com.charleskorn.kaml.Yaml
-import com.varabyte.kobweb.common.path.toUnixSeparators
+import com.varabyte.kobweb.common.path.invariantSeparatorsPath
 import com.varabyte.kobweb.common.yaml.nonStrictDefault
 import kotlinx.serialization.Serializable
 import java.nio.file.Path
@@ -57,5 +57,5 @@ class KobwebTemplateFile private constructor(val folder: Path = Path.of("")) {
 fun KobwebTemplateFile.getName(rootPath: Path): String {
     return template.metadata.name ?: folder.relativeTo(rootPath).toString()
         // Even on Windows, show Unix-style slashes, as `kobweb create` expects that format
-        .toUnixSeparators()
+        .invariantSeparatorsPath
 }
