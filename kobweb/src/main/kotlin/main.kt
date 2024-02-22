@@ -163,7 +163,10 @@ fun main(args: Array<String>) {
 
     class Kobweb : NoOpCliktCommand() {
         init {
-            context { helpFormatter = CliktHelpFormatter(showDefaultValues = true) }
+            context {
+                helpFormatter = CliktHelpFormatter(showDefaultValues = true)
+                helpOptionNames += "help" // Allows "kobweb help" to work
+            }
         }
 
     }
