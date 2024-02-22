@@ -17,6 +17,8 @@ import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import com.varabyte.kobweb.cli.common.DEFAULT_BRANCH
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
+import com.varabyte.kobweb.cli.common.Globals
+import com.varabyte.kobweb.cli.common.ProgramArgsKey
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.version.SemVer
 import com.varabyte.kobweb.cli.common.version.kobwebCliVersion
@@ -98,6 +100,8 @@ private fun shouldUseAnsi(tty: Int, notty: Int): Boolean {
 }
 
 fun main(args: Array<String>) {
+    Globals[ProgramArgsKey] = args
+
     /**
      * Common functionality for all Kobweb subcommands.
      */

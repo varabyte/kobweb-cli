@@ -182,8 +182,22 @@ fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
         foundPath?.let { KobwebApplication(it) }?.also { application ->
             if (application.path != basePath) {
                 informInfo {
+                    val argsCopy = Globals.getValue(ProgramArgsKey).toMutableList()
+                    val pathIndex = argsCopy.indexOfFirst { it == "-p" || it == "--path" }
+                    val newPath = application.path.relativeToCurrentDirectoryOrBasePath().toString()
+                    when {
+                        // Replace over the old path
+                        pathIndex >= 0 -> argsCopy[pathIndex + 1] = newPath
+                        // Add "-p <newPath>". Always set it as the first argument after the subcommand,
+                        // e.g. `kobweb run --env prod` -> `kobweb run -p <newPath> --env prod`
+                        // to make the change easier to see for the user but also to reduce the chance of this causing a
+                        // problem in the future (e.g. if we add an argument that consumes the rest of the line or
+                        // something)
+                        else -> argsCopy.addAll(1, listOf("-p", newPath))
+                    }
+
                     text("Running: ")
-                    cyan { text("kobweb run -p ${application.path.relativeToCurrentDirectoryOrBasePath()}") }
+                    cyan { text("kobweb ${argsCopy.joinToString(" ")}") }
                 }
             }
         }
