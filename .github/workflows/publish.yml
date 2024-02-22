@@ -1,0 +1,72 @@
+name: Publish Kobweb CLI to package managers
+
+on:
+  workflow_dispatch:
+   inputs:
+      dryRun:
+        description: 'Dry run'
+        type: boolean
+        required: true
+        default: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+
+      - name: Add secret Gradle properties
+        env:
+          GRADLE_PROPERTIES: ${{ secrets.VARABYTE_GRADLE_PROPERTIES }}
+        run: |
+          mkdir -p ~/.gradle/
+          echo "GRADLE_USER_HOME=${HOME}/.gradle" >> $GITHUB_ENV
+          echo "${GRADLE_PROPERTIES}" > ~/.gradle/gradle.properties
+
+      - name: Set dry run option
+        run: |
+          echo "kobweb.cli.jreleaser.dryrun=${{ github.event.inputs.dryRun }}" >> ~/.gradle/gradle.properties
+
+      # Force Gradle to run early so we don't capture the "Downloading Gradle" message in
+      # the output of our following steps
+      - name: Force Gradle download
+        run: ./gradlew --version
+
+      - name: Get Kobweb CLI Version
+        id: cli_version
+        run: |
+          echo "VERSION=$(./gradlew -q :kobweb:printVersion)" >> "$GITHUB_OUTPUT"
+
+      - name: Download Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLI_VERSION: ${{ steps.cli_version.outputs.VERSION }}
+        run: |
+          ASSET_ZIP="kobweb-$CLI_VERSION.zip"
+          ASSET_TAR="kobweb-$CLI_VERSION.tar"
+          # Need to put files here so jreleaser can find them
+          ASSET_PATH="kobweb/build/distributions"
+          mkdir -p $ASSET_PATH
+          # Download assets using GitHub API
+          curl -sL -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/octet-stream" \
+            "$(curl -sL -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v$CLI_VERSION" | jq -r ".assets[] | select(.name==\"$ASSET_ZIP\").url")" \
+            -o "$ASSET_PATH/$ASSET_ZIP"
+          curl -sL -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/octet-stream" \
+            "$(curl -sL -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v$CLI_VERSION" | jq -r ".assets[] | select(.name==\"$ASSET_TAR\").url")" \
+            -o "$ASSET_PATH/$ASSET_TAR"
+
+          echo "Zip checksum $(sha256sum $ASSET_PATH/$ASSET_ZIP)"
+          echo "Tar checksum $(sha256sum $ASSET_PATH/$ASSET_TAR)"
+
+      - name: Publish Kobweb CLI to package managers
+        run: ./gradlew :kobweb:jreleaserPublish
