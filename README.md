@@ -28,38 +28,67 @@ snapshot and have this binary depend on it. This is a bit of a pain, but it's no
 
 ### Dev
 
-For local development (snapshot versions): `./gradlew :kobweb:installShadowDist`
+For local development...
 
-This will create the binary: `kobweb/build/install/kobweb/bin/kobweb`.
+* Check your `libs.versions.toml` file.
+  * `kobweb-cli` should have a version with a `-SNAPSHOT` suffix.
 
-You are encouraged to create a symlink to it which lives in your pathm, so you can run `kobweb` from anywhere.
+* Install the binary: `./gradlew :kobweb:installShadowDist`
+  * This will create `kobweb/build/install/kobweb/bin/kobweb`.
+  * You are encouraged to create a symlink to it which lives in your path, so you can run the `kobweb` command from
+    anywhere.
 
 ### Prod
 
-In preparation for distribution (non-snapshot versions): `./gradlew :kobweb:assembleShadowDist`
+For a release...
 
-This creates .zip and .tar files under `kobweb/build/distributions`.
+* Check your `libs.versions.toml` file.
+  * `kobweb-cli` should have a version that does NOT end with a `-SNAPSHOT` suffix.
+
+* Assemble the tar and zip files: `./gradlew :kobweb:assembleShadowDist`
+  * Files live under `kobweb/build/distributions`.
 
 ## Releasing
 
 * Create a new release on GitHub.
 * Choose a tag: "vX.Y.Z", then "Create a new tag on publish"
 * Set that tag for the release title as well
-* Fill out the release, using previous releases as guidance (and using changes to main since last time to see what's new)
-* Add the .zip and .tar files from kobweb/build/distributions
+* Fill out the release, using previous releases as guidance (and comparing changes to main since last time to see what's
+  new)
+* Add the .zip and .tar files from `kobweb/build/distributions`
 * Confirm the release.
 
 ## Publishing
 
-Run `./gradlew :kobweb:jreleaserPublish`
+> [!IMPORTANT]
+> To successfully publish the CLI, the version must NOT be set to a SNAPSHOT version.
 
-Although to do this, you must have defined the following secrets on your machine:
+> [!CAUTION]
+> Be very careful with this step. If you publish things from the wrong branch, you could make a mess that could take a
+> while to clean up.
+
+* From https://github.com/varabyte/kobweb-cli/actions choose the "Publish" workflow.
+* Be sure to select the correct target (should be a branch or tag targeting the version you just released).
+* Uncheck the "Dry run" checkbox. (Although you may want to do a dry run first to make sure everything is set up
+  correctly.)
+* Run the workflow.
+
+### Manual publishing
+
+* Set the Gradle property `kobweb.cli.jreleaser.dryrun` to false.
+* Run `./gradlew :kobweb:jreleaserPublish`
+
+Although to do successfully publish, you must have defined the following secrets on your machine:
 
 * varabyte.github.username
 * varabyte.github.token
 * sdkman.key
 
+and the github user specified must have access to edit the `varabyte` organization, as the publish process modifies
+other sibling repositories as a side effect.
+
 ## Inform users about the release
 
-Update the version file
-https://github.com/varabyte/data/blob/main/kobweb/cli-version.txt
+* Update the badge version at the top of the main Kobweb README
+* Update the version file: https://github.com/varabyte/data/blob/main/kobweb/cli-version.txt
+* Create an announcement in all relevant Kobweb communities (Discord, Slack, etc.)
