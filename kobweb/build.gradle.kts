@@ -79,7 +79,7 @@ if (githubUsername != null && githubToken != null) {
     // Read about JReleaser at https://jreleaser.org/guide/latest/index.html
     jreleaser {
         val isDryRun = (findProperty("kobweb.cli.jreleaser.dryrun") as? String)?.toBoolean() ?: true
-        dryrun.set(isDryRun) // Specified explicitly for convenience - set dryrun to true when experimenting with values!
+        dryrun.set(isDryRun) // Specified explicitly for convenience - set dryrun to false when ready to publish!
         gitRootSearch.set(true)
         dependsOnAssemble.set(false) // We pre-assemble ourselves (using shadow jar)
 
