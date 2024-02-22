@@ -24,10 +24,8 @@ import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.runtime.Session
 import java.io.Closeable
-import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
-import kotlin.streams.toList
 
 /**
  * Classes needed for the CLI to be able to execute commands for the current Kobweb project.
@@ -97,9 +95,9 @@ fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
 
     val foundPath: Path? = if (!KobwebFolder.isFoundIn(basePath)) {
         val candidates = try {
-            Files.walk(basePath, 2)
-                .filter(Files::isDirectory)
-                .filter { KobwebFolder.isFoundIn(it) }
+            basePath.toFile().walkTopDown().maxDepth(2)
+                .filter { it.isDirectory && KobwebFolder.isFoundIn(it.toPath()) }
+                .map { it.toPath() }
                 .toList()
         } catch(ex: Exception) {
             // If this happens, we definitely don't have access to projects to recommend to users.
