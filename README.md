@@ -48,6 +48,13 @@ For a release...
 * Assemble the tar and zip files: `./gradlew :kobweb:assembleShadowDist`
   * Files live under `kobweb/build/distributions`.
 
+> [!IMPORTANT]
+> The Kobweb CLI project has a [build workflow](.github/workflows/build.yml) which generates CLI artifacts every time a
+> new commit is pushed.
+>
+> You should consider using these instead of ones you built yourself, as the CI environment is guaranteed to be pure,
+> whereas local environments may be contaminated by things you've installed or set up on your own system.
+
 ## Releasing
 
 * Create a new release on GitHub.
@@ -55,7 +62,7 @@ For a release...
 * Set that tag for the release title as well
 * Fill out the release, using previous releases as guidance (and comparing changes to main since last time to see what's
   new)
-* Add the .zip and .tar files from `kobweb/build/distributions`
+* Add the .zip and .tar files downloaded from GitHub actions or, if built manually, from `kobweb/build/distributions`
 * Confirm the release.
 
 ## Publishing
