@@ -1,0 +1,31 @@
+name: Build Kobweb CLI
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 11
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+
+      - name: Build Kobweb CLI
+        run: ./gradlew :kobweb:assembleShadowDist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kobweb-cli-artifacts
+          path: kobweb/build/distributions
+          if-no-files-found: error
+          retention-days: 1
