@@ -36,6 +36,13 @@ application {
     mainClass.set("MainKt")
 }
 
+// Useful for CLI
+tasks.register("printVersion") {
+    doLast {
+        println(version.toString())
+    }
+}
+
 // We used to minimize this jar, but it kept causing us problems. At our most recent check a minimized jar was 11MB vs.
 // 12MB not minimized. It's just not worth the surprising crashes!
 // Just in case we decide to minimize again someday, here's what we were doing.
@@ -71,7 +78,8 @@ val (githubUsername, githubToken) = listOf("varabyte.github.username", "varabyte
 if (githubUsername != null && githubToken != null) {
     // Read about JReleaser at https://jreleaser.org/guide/latest/index.html
     jreleaser {
-        dryrun.set(false) // Specified explicitly for convenience - set dryrun to true when experimenting with values!
+        val isDryRun = (findProperty("kobweb.cli.jreleaser.dryrun") as? String)?.toBoolean() ?: true
+        dryrun.set(isDryRun) // Specified explicitly for convenience - set dryrun to true when experimenting with values!
         gitRootSearch.set(true)
         dependsOnAssemble.set(false) // We pre-assemble ourselves (using shadow jar)
 
