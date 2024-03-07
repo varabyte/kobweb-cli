@@ -97,6 +97,11 @@ fun handleCreate(repo: String, branch: String, templateName: String?) = session 
                     if (templateName != null) {
                         templateRoots.indexOfFirst { templateFile ->
                             templateFile.getName(tempDir).contains(templateName)
+                        }.takeIf { it >= 0 } ?:
+                        templateRoots.indexOfFirst { templateFile ->
+                            // If here, there was no name match, but maybe a description will match? e.g. "worker" will
+                            // find the "imageprocessor" template which mentions it demonstrates how workers work.
+                            templateFile.template.metadata.description.contains(templateName, ignoreCase = true)
                         }.takeIf { it >= 0 } ?: 0
                     } else 0
                 )
