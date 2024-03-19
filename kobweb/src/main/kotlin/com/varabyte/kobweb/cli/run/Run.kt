@@ -67,8 +67,11 @@ fun handleRun(
 ) {
     val originalEnv = env
 
+    // Dev environments don't currently apply to static site layouts, which are only expected at this point to
+    // run after a static layout export. However, the env value, if not explicitly set, defaults to dev. Let's
+    // just force it into prod mode in that case and show a warning.
     @Suppress("NAME_SHADOWING") // We're intentionally intercepting the original value
-    val env = env.takeIf { siteLayout != SiteLayout.STATIC } ?: ServerEnvironment.PROD
+    val env = env.takeIf { siteLayout.isFullstack } ?: ServerEnvironment.PROD
 
     val kobwebExecutionEnvironment = findKobwebExecutionEnvironment(env, projectDir.toPath(), useAnsi)
         ?: return // Error message already printed
@@ -115,7 +118,7 @@ private fun handleRun(
 
             newline() // Put space between user prompt and eventual first line of Gradle output
 
-            if (siteLayout == SiteLayout.STATIC) {
+            if (siteLayout.isStatic) {
                 showStaticSiteLayoutWarning()
 
                 if (originalEnv == ServerEnvironment.DEV) {

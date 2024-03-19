@@ -76,7 +76,7 @@ private fun handleExport(
 
             newline() // Put space between user prompt and eventual first line of Gradle output
 
-            if (siteLayout == SiteLayout.STATIC) {
+            if (siteLayout.isStatic) {
                 showStaticSiteLayoutWarning()
             }
 

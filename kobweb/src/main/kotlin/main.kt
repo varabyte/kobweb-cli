@@ -39,10 +39,22 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 
+private const val KOBWEB_DEPRECATED_MESSAGE =
+    "NOTE: The option `kobweb` is deprecated and will be removed in a future version. Please use `fullstack` instead."
+
 private fun ParameterHolder.layout() = option(
     "-l", "--layout",
-    help = "Specify the organizational layout of the site files.",
-).enum<SiteLayout>().default(SiteLayout.KOBWEB)
+    help = "Specify the organizational layout of the site files."
+            + " " + KOBWEB_DEPRECATED_MESSAGE
+)
+    .enum<SiteLayout>()
+    .default(SiteLayout.FULLSTACK)
+    .validate {
+        @Suppress("DEPRECATION")
+        if (it == SiteLayout.KOBWEB) {
+            message(KOBWEB_DEPRECATED_MESSAGE)
+        }
+    }
 
 // We use `absoluteFile` so that the parent directories are directly accessible. This is necessary for the gradle
 // tooling api to be able to get the root project configuration if the kobweb module is a subproject.
