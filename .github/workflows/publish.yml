@@ -70,3 +70,13 @@ jobs:
 
       - name: Publish Kobweb CLI to package managers
         run: ./gradlew :kobweb:jreleaserPublish
+
+      - name: Update AUR Package
+        uses: varabyte/update-aur-package@v1.0.4
+        with:
+          dry_run: ${{ github.event.inputs.dryRun }}
+          version: ${{ steps.cli_version.outputs.VERSION }}
+          package_name: kobweb
+          commit_username: phi1309
+          commit_email: phi1309@protonmail.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
