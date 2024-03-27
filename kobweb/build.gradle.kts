@@ -143,6 +143,9 @@ if (githubUsername != null && githubToken != null) {
             brew {
                 active.set(Active.RELEASE)
                 templateDirectory.set(File("jreleaser/templates/brew"))
+                // The following changes the line `depends_on "openjdk@11"` to `depends_on "openjdk"
+                // See also: https://jreleaser.org/guide/latest/reference/packagers/homebrew.html#_jdk_dependency
+                extraProperties.put("useVersionedJava", false)
             }
             scoop {
                 active.set(Active.RELEASE)
