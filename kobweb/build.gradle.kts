@@ -1,4 +1,7 @@
 import org.jreleaser.model.Active
+import java.io.FileNotFoundException
+import java.nio.file.Paths
+import java.util.jar.JarFile
 
 plugins {
     kotlin("jvm")
@@ -69,6 +72,112 @@ distributions {
 // Avoid ambiguity / add clarity in generated artifacts
 tasks.jar {
     archiveFileName.set("kobweb-cli.jar")
+}
+
+// Proguard for minimizing the JAR file
+buildscript {
+    repositories { mavenCentral() }
+    dependencies {
+        classpath(libs.plugins.proguard.get().toString()) {
+            // On older versions of proguard, Android build tools will be included
+            exclude("com.android.tools.build")
+        }
+    }
+}
+
+tasks.register<proguard.gradle.ProGuardTask>("proguard") {
+    dependsOn(tasks.shadowJar)
+
+    val originalJarFile = tasks.shadowJar.flatMap { it.archiveFile }
+    val originalJarFileNameWithoutExtension = originalJarFile.get().asFile.nameWithoutExtension
+    val originalJarFileDestination = tasks.shadowJar.flatMap { it.destinationDirectory }
+
+    val minimizedJarFile = originalJarFileDestination.get().file("$originalJarFileNameWithoutExtension-min.jar")
+
+    injars(originalJarFile)
+    outjars(minimizedJarFile)
+
+    val javaHome = System.getProperty("java.home")
+
+    // Starting from Java 9, runtime classes are packaged in modular JMOD files.
+    fun includeModuleFromJdk(jModFileNameWithoutExtension: String) {
+        val jModFilePath = Paths.get(javaHome, "jmods", "$jModFileNameWithoutExtension.jmod").toString()
+        val jModFile = File(jModFilePath)
+        if (!jModFile.exists()) {
+            throw FileNotFoundException("The '$jModFileNameWithoutExtension' at '$jModFilePath' doesn't exist.")
+        }
+        libraryjars(
+            mapOf("jarfilter" to "!**.jar", "filter" to "!module-info.class"),
+            jModFilePath,
+        )
+    }
+
+    val javaModules =
+        listOf(
+            "java.base",
+            // Needed to support Java Swing/Desktop (Required by Kotter Virtual Terminal)
+            "java.desktop",
+            // Java Data Transfer is required by Kotter Virtual Terminal
+            "java.datatransfer",
+            // Needed to support Java logging utils (required by Okio)
+            "java.logging",
+            // Java RMI is required by freemarker and some other dependencies
+            "java.rmi",
+            // Java XML is required by freemarker and some other dependencies
+            "java.xml",
+            // Java SQL is required by freemarker and some other dependencies
+            "java.sql",
+        )
+    javaModules.forEach { includeModuleFromJdk(jModFileNameWithoutExtension = it) }
+
+    // Includes the main source set's compile classpath for Proguard.
+    // Notice that Shadow JAR already includes Kotlin standard library and dependencies, yet this
+    // is essential for resolving Kotlin and other library warnings without using '-dontwarn kotlin.**'
+    injars(sourceSets.main.get().compileClasspath)
+
+    printmapping(originalJarFileDestination.get().file("$originalJarFileNameWithoutExtension.map"))
+
+    // Disabling obfuscation makes the JAR file size a bit bigger and makes the debugging process a bit less easy
+    dontobfuscate()
+    // Kotlinx serialization breaks when using optimizations
+    dontoptimize()
+
+    configuration(file("proguard.pro"))
+
+    // Use Proguard rules that provided by dependencies in JAR file
+    doFirst {
+        JarFile(originalJarFile.get().asFile).use { jarFile ->
+            val generatedRulesFiles =
+                jarFile.entries().asSequence()
+                    .filter { it.name.startsWith("META-INF/proguard") && !it.isDirectory }
+                    .map { entry ->
+                        jarFile.getInputStream(entry).bufferedReader().use { reader ->
+                            Pair(reader.readText(), entry)
+                        }
+                    }
+                    .toList()
+
+            val buildProguardDirectory = layout.buildDirectory.dir("proguard").get().asFile
+            if (!buildProguardDirectory.exists()) {
+                buildProguardDirectory.mkdir()
+            }
+            generatedRulesFiles.forEach { (rulesContent, rulesFileEntry) ->
+                val rulesFileNameWithExtension = rulesFileEntry.name.substringAfterLast("/")
+                val generatedProguardFile = File(buildProguardDirectory, "generated-$rulesFileNameWithExtension")
+                if (!generatedProguardFile.exists()) {
+                    generatedProguardFile.createNewFile()
+                }
+                generatedProguardFile.bufferedWriter().use { bufferedWriter ->
+                    bufferedWriter.appendLine("# Generated file from ($rulesFileEntry) - manual changes will be overwritten")
+                    bufferedWriter.appendLine()
+
+                    bufferedWriter.appendLine(rulesContent)
+                }
+
+                configuration(generatedProguardFile)
+            }
+        }
+    }
 }
 
 // These values are specified in ~/.gradle/gradle.properties; otherwise sorry, no jreleasing for you :P
