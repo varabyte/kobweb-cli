@@ -26,3 +26,4 @@ jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+proguard = { id = "com.guardsquare:proguard-gradle", version.ref = "proguard" }
