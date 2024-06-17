@@ -8,8 +8,9 @@ kobweb-libs = "0.17.1"
 kotter = "1.1.2"
 kotlin = "1.8.10"
 kotlinx-coroutines = "1.6.0"
-okhttp = "4.10.0"
+okhttp = "4.12.0"
 shadow = "7.0.0"
+proguard = "7.5.0"
 
 [libraries]
 clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
@@ -25,3 +26,4 @@ jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+proguard = { id = "com.guardsquare:proguard-gradle", version.ref = "proguard" }
