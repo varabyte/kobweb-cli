@@ -8,7 +8,7 @@ kobweb-libs = "0.17.1"
 kotter = "1.1.2"
 kotlin = "1.8.10"
 kotlinx-coroutines = "1.6.0"
-okhttp = "4.10.0"
+okhttp = "4.12.0"
 shadow = "7.0.0"
 proguard = "7.5.0"
 
