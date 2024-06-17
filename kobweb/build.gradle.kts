@@ -74,7 +74,7 @@ tasks.jar {
     archiveFileName.set("kobweb-cli.jar")
 }
 
-// Proguard for minimizing the JAR file
+// Proguard for minimizing the bundle size
 buildscript {
     repositories { mavenCentral() }
     dependencies {
