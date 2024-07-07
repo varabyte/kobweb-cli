@@ -4,7 +4,7 @@ import com.github.ajalt.clikt.core.ParameterHolder
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.subcommands
-import com.github.ajalt.clikt.output.CliktHelpFormatter
+import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.convert
@@ -164,7 +164,12 @@ fun main(args: Array<String>) {
     class Kobweb : NoOpCliktCommand() {
         init {
             context {
-                helpFormatter = CliktHelpFormatter(showDefaultValues = true)
+                helpFormatter = { context ->
+                    MordantHelpFormatter(
+                        context = context,
+                        showDefaultValues = true,
+                    )
+                }
                 helpOptionNames += "help" // Allows "kobweb help" to work
             }
         }

@@ -1,5 +1,5 @@
 [versions]
-clikt = "3.5.2"
+clikt = "4.4.0"
 freemarker = "2.3.31"
 jreleaser = "1.10.0"
 kaml = "0.55.0" # Synced with Kobweb TODO: Remove after Kobweb turns this into an API dependency starting in 0.16.3
