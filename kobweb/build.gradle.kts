@@ -14,6 +14,10 @@ version = libs.versions.kobweb.cli.get()
 repositories {
     // For Gradle Tooling API
     maven { url = uri("https://repo.gradle.org/gradle/libs-releases") }
+    // TODO: Remove this repository once clikt-core module is published https://github.com/ajalt/clikt/issues/523
+    maven {
+        url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
+    }
 }
 
 dependencies {

@@ -1,8 +1,10 @@
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.NoOpCliktCommand
 import com.github.ajalt.clikt.core.ParameterHolder
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.MordantHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -105,8 +107,10 @@ fun main(args: Array<String>) {
     /**
      * Common functionality for all Kobweb subcommands.
      */
-    abstract class KobwebSubcommand(help: String) : CliktCommand(help = help) {
+    abstract class KobwebSubcommand(private val help: String) : CliktCommand() {
         private var newVersionAvailable: SemVer.Parsed? = null
+
+        override fun help(context: Context): String = help
 
         /**
          * If true, do an upgrade check while this command is running.
