@@ -22,7 +22,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation(libs.clikt)
+    implementation(libs.clikt.core)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotter)
     implementation(libs.freemarker)

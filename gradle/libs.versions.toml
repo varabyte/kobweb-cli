@@ -12,7 +12,7 @@ okhttp = "4.10.0"
 shadow = "7.0.0"
 
 [libraries]
-clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+clikt-core = { module = "com.github.ajalt.clikt:clikt-core", version.ref = "clikt" }
 freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
 kobweb-common = { module = "com.varabyte.kobweb:kobweb-common", version.ref = "kobweb-libs" }

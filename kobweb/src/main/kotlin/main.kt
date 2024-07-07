@@ -1,12 +1,11 @@
-import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.Context
-import com.github.ajalt.clikt.core.NoOpCliktCommand
+import com.github.ajalt.clikt.core.CoreCliktCommand
 import com.github.ajalt.clikt.core.ParameterHolder
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
-import com.github.ajalt.clikt.output.MordantHelpFormatter
+import com.github.ajalt.clikt.output.PlaintextHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.convert
@@ -107,7 +106,7 @@ fun main(args: Array<String>) {
     /**
      * Common functionality for all Kobweb subcommands.
      */
-    abstract class KobwebSubcommand(private val help: String) : CliktCommand() {
+    abstract class KobwebSubcommand(private val help: String) : CoreCliktCommand() {
         private var newVersionAvailable: SemVer.Parsed? = null
 
         override fun help(context: Context): String = help
@@ -165,11 +164,16 @@ fun main(args: Array<String>) {
         protected abstract fun doRun()
     }
 
+    // TODO: In case CliKt project shared this class, use the one from CliKt
+    open class NoOpCliktCommand: CoreCliktCommand() {
+        final override fun run() {}
+    }
+
     class Kobweb : NoOpCliktCommand() {
         init {
             context {
                 helpFormatter = { context ->
-                    MordantHelpFormatter(
+                    PlaintextHelpFormatter(
                         context = context,
                         showDefaultValues = true,
                     )
