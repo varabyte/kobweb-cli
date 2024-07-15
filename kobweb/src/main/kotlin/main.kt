@@ -1,5 +1,6 @@
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
+import com.github.ajalt.clikt.core.NoOpCliktCommand
 import com.github.ajalt.clikt.core.ParameterHolder
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
@@ -162,11 +163,6 @@ fun main(args: Array<String>) {
         }
 
         protected abstract fun doRun()
-    }
-
-    // TODO: In case CliKt project shared this class, use the one from CliKt
-    open class NoOpCliktCommand: CoreCliktCommand() {
-        final override fun run() {}
     }
 
     class Kobweb : NoOpCliktCommand() {
