@@ -160,7 +160,7 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             "kobwebExport",
             "-PkobwebReuseServer=false",
             "-PkobwebEnv=DEV",
-            "-PkobwebRunLayout=KOBWEB",
+            "-PkobwebRunLayout=FULLSTACK",
             "-PkobwebBuildTarget=RELEASE",
             "-PkobwebExportLayout=$siteLayout",
             *extraGradleArgs.toTypedArray()
