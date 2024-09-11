@@ -1,5 +1,6 @@
 package com.varabyte.kobweb.cli.run
 
+import com.github.ajalt.clikt.core.CliktError
 import com.varabyte.kobweb.cli.common.Anims
 import com.varabyte.kobweb.cli.common.GradleAlertBundle
 import com.varabyte.kobweb.cli.common.KobwebExecutionEnvironment
@@ -15,6 +16,7 @@ import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warn
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
 import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
+import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.common.navigation.RoutePrefix
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.ServerRequest
@@ -271,12 +273,17 @@ private fun handleRun(
     if (runInPlainMode) {
         kobwebApplication.assertServerNotAlreadyRunning()
 
-        // If we're non-interactive, it means we just want to start the Kobweb server and exit without waiting for
-        // for any additional changes. (This is essentially used when run in a web server environment)
-        kobwebGradle.startServer(enableLiveReloading = false, siteLayout, gradleArgsCommon + gradleArgsStart)
-            .also { it.waitFor() }
         if (gradleArgsStop.isNotEmpty()) {
             println("Warning: --gradle-stop is ignored when running in non-interactive mode (which does not stop the server).")
+        }
+
+        // If we're non-interactive, it means we just want to start the Kobweb server and exit without waiting for
+        // for any additional changes. (This is essentially used when run in a web server environment)
+        val runFailed = kobwebGradle
+            .startServer(enableLiveReloading = false, siteLayout, gradleArgsCommon + gradleArgsStart)
+            .waitForAndCheckForException() != null
+        if (runFailed) {
+            throw CliktError("Failed to start a Kobweb server. Please check Gradle output and resolve any errors before retrying.")
         }
 
         val serverStateFile = ServerStateFile(kobwebApplication.kobwebFolder)

@@ -168,6 +168,13 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
     }
 }
 
+fun KobwebGradle.Handle.waitForAndCheckForException(): Exception? {
+    var failure: Exception? = null
+    onCompleted = { failure = it }
+    waitFor()
+    return failure
+}
+
 private const val GRADLE_ERROR_PREFIX = "e: "
 private const val GRADLE_WARNING_PREFIX = "w: "
 private const val GRADLE_WHAT_WENT_WRONG = "* What went wrong:"
