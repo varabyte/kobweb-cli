@@ -22,7 +22,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotter)
     implementation(libs.freemarker)
-    implementation(libs.kaml)
     implementation(libs.okhttp)
     implementation(libs.kobweb.common)
 
