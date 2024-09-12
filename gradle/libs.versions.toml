@@ -2,7 +2,7 @@
 clikt = "3.5.2"
 freemarker = "2.3.31"
 jreleaser = "1.14.0"
-kobweb-cli = "0.9.16-SNAPSHOT"
+kobweb-cli = "0.9.16"
 kobweb-libs = "0.19.1"
 kotter = "1.1.2"
 kotlin = "2.0.20"
