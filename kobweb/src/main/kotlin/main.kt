@@ -1,6 +1,6 @@
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
-import com.github.ajalt.clikt.core.NoOpCliktCommand
+import com.github.ajalt.clikt.core.CoreNoOpCliktCommand
 import com.github.ajalt.clikt.core.ParameterHolder
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
@@ -165,7 +165,7 @@ fun main(args: Array<String>) {
         protected abstract fun doRun()
     }
 
-    class Kobweb : NoOpCliktCommand() {
+    class Kobweb : CoreNoOpCliktCommand() {
         init {
             context {
                 helpFormatter = { context ->
