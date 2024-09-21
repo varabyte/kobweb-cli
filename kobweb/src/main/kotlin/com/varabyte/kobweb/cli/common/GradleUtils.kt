@@ -160,12 +160,19 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             "kobwebExport",
             "-PkobwebReuseServer=false",
             "-PkobwebEnv=DEV",
-            "-PkobwebRunLayout=KOBWEB",
+            "-PkobwebRunLayout=FULLSTACK",
             "-PkobwebBuildTarget=RELEASE",
             "-PkobwebExportLayout=$siteLayout",
             *extraGradleArgs.toTypedArray()
         )
     }
+}
+
+fun KobwebGradle.Handle.waitForAndCheckForException(): Exception? {
+    var failure: Exception? = null
+    onCompleted = { failure = it }
+    waitFor()
+    return failure
 }
 
 private const val GRADLE_ERROR_PREFIX = "e: "
@@ -223,21 +230,33 @@ fun RunScope.handleGradleOutput(line: String, isError: Boolean, onGradleEvent: (
 // Windows flickering while still presenting enough information for users. If people complain,
 // 5 is too small, we can allow users to configure this somehow, e.g. via CLI params.
 class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
-    private val alerts = session.liveListOf<GradleAlert>()
+    private val warnings = session.liveListOf<GradleAlert.Warning>()
+    private val errors = session.liveListOf<GradleAlert.Error>()
     private var hasFirstTaskRun by session.liveVarOf(false)
     private var startIndex by session.liveVarOf(0)
     private var stuckToEnd = false
-    private val maxIndex get() = (alerts.size - pageSize).coerceAtLeast(0)
+    private val maxIndex get() = (warnings.size + errors.size - pageSize).coerceAtLeast(0)
 
     fun handleAlert(alert: GradleAlert) {
-        if (alert is GradleAlert.BuildRestarted) {
-            startIndex = 0
-            stuckToEnd = false
-            alerts.clear()
-        } else if (alert is GradleAlert.Task) {
-            hasFirstTaskRun = true
-        } else {
-            alerts.add(alert)
+        when (alert) {
+            is GradleAlert.BuildRestarted -> {
+                startIndex = 0
+                stuckToEnd = false
+                warnings.clear()
+                errors.clear()
+            }
+
+            is GradleAlert.Task -> {
+                hasFirstTaskRun = true
+            }
+
+            is GradleAlert.Warning -> {
+                warnings.add(alert)
+            }
+
+            is GradleAlert.Error -> {
+                errors.add(alert)
+            }
         }
 
         if (stuckToEnd) {
@@ -291,15 +310,13 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
             }
         }
 
-        val numErrors = alerts.filterIsInstance<GradleAlert.Error>().size
-        val numWarnings = alerts.filterIsInstance<GradleAlert.Warning>().size
-
-        if (numErrors + numWarnings == 0) return
+        val totalMessageCount = warnings.size + errors.size
+        if (totalMessageCount == 0) return
 
         renderScope.apply {
             yellow {
-                text("Found $numErrors error(s) and $numWarnings warning(s).")
-                if (numErrors > 0) {
+                text("Found ${errors.size} error(s) and ${warnings.size} warning(s).")
+                if (errors.isNotEmpty()) {
                     text(" Please resolve errors to continue.")
                 }
                 textLine()
@@ -309,8 +326,13 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
                 textLine("... Press UP, PAGE UP, or HOME to see earlier errors.")
             }
             for (i in startIndex until (startIndex + pageSize)) {
-                if (i >= alerts.size) break
-                val alert = alerts[i]
+                val alert = if (i < errors.size) {
+                    errors[i]
+                } else if (i < totalMessageCount) {
+                    warnings[i - errors.size]
+                } else {
+                    break
+                }
 
                 if (i > startIndex) textLine()
                 text("${i + 1}: ")

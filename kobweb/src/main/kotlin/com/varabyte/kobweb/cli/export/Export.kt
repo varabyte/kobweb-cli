@@ -1,5 +1,6 @@
 package com.varabyte.kobweb.cli.export
 
+import com.github.ajalt.clikt.core.CliktError
 import com.varabyte.kobweb.cli.common.Anims
 import com.varabyte.kobweb.cli.common.GradleAlertBundle
 import com.varabyte.kobweb.cli.common.KobwebExecutionEnvironment
@@ -13,6 +14,7 @@ import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
 import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
+import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.SiteLayout
 import com.varabyte.kotter.foundation.anim.textAnimOf
@@ -76,7 +78,7 @@ private fun handleExport(
 
             newline() // Put space between user prompt and eventual first line of Gradle output
 
-            if (siteLayout == SiteLayout.STATIC) {
+            if (siteLayout.isStatic) {
                 showStaticSiteLayoutWarning()
             }
 
@@ -154,7 +156,12 @@ private fun handleExport(
     if (runInPlainMode) {
         kobwebApplication.assertServerNotAlreadyRunning()
 
-        kobwebGradle.export(siteLayout, gradleArgsCommon + gradleArgsExport).also { it.waitFor() }
-        kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).also { it.waitFor() }
+        val exportFailed = kobwebGradle
+            .export(siteLayout, gradleArgsCommon + gradleArgsExport)
+            .waitForAndCheckForException() != null
+
+        kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).waitFor()
+
+        if (exportFailed) throw CliktError("Export failed. Please check Gradle output and resolve any errors before retrying.")
     }
 }

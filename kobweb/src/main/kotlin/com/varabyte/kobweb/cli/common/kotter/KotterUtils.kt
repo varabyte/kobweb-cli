@@ -133,9 +133,13 @@ fun Session.warn(message: String) {
     }.run()
 }
 
-private fun RenderScope.promptQuestion(query: String, extra: RenderScope.() -> Unit = {}) {
+fun RenderScope.textQuestionPrefix() {
     cyan { text('?') }
     text(' ')
+}
+
+private fun RenderScope.promptQuestion(query: String, extra: RenderScope.() -> Unit = {}) {
+    textQuestionPrefix()
     bold { textLine("$query ") }
     extra()
     text("> ")

@@ -5,6 +5,7 @@ import com.varabyte.kobweb.cli.common.kotter.informInfo
 import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.onYesNoChanged
 import com.varabyte.kobweb.cli.common.kotter.textInfoPrefix
+import com.varabyte.kobweb.cli.common.kotter.textQuestionPrefix
 import com.varabyte.kobweb.cli.common.kotter.yesNo
 import com.varabyte.kobweb.common.error.KobwebException
 import com.varabyte.kobweb.project.KobwebApplication
@@ -116,8 +117,8 @@ fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
                     text("A Kobweb application was not found here, but one was found in ")
                     cyan { text(candidate.relativeToCurrentDirectoryOrBasePath().toString()) }
                     textLine(".")
-                    textLine()
 
+                    textQuestionPrefix()
                     text("Use ")
                     cyan { text(candidate.relativeToCurrentDirectoryOrBasePath().toString()) }
                     text(" instead? ")
@@ -133,7 +134,6 @@ fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
 
                 candidate.takeIf { shouldUseNewLocation }
             } else {
-
                 var candidateIndex by liveVarOf(0)
                 var shouldUseNewLocation by liveVarOf(true)
 

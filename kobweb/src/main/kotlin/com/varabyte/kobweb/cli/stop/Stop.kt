@@ -1,5 +1,6 @@
 package com.varabyte.kobweb.cli.stop
 
+import com.github.ajalt.clikt.core.CliktError
 import com.varabyte.kobweb.cli.common.Anims
 import com.varabyte.kobweb.cli.common.KobwebExecutionEnvironment
 import com.varabyte.kobweb.cli.common.findKobwebExecutionEnvironment
@@ -9,6 +10,7 @@ import com.varabyte.kobweb.cli.common.kotter.informGradleStarting
 import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
+import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kotter.foundation.anim.textAnimOf
 import com.varabyte.kotter.foundation.liveVarOf
@@ -84,6 +86,12 @@ private fun handleStop(
             return
         }
 
-        kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).also { it.waitFor() }
+        val stopFailed = kobwebGradle
+            .stopServer(gradleArgsCommon + gradleArgsStop)
+            .waitForAndCheckForException() != null
+
+        if (stopFailed) {
+            throw CliktError("Failed to stop a Kobweb server. Please check Gradle output and resolve any errors before retrying.")
+        }
     }
 }

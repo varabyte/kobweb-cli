@@ -1,5 +1,6 @@
 package com.varabyte.kobweb.cli.run
 
+import com.github.ajalt.clikt.core.CliktError
 import com.varabyte.kobweb.cli.common.Anims
 import com.varabyte.kobweb.cli.common.GradleAlertBundle
 import com.varabyte.kobweb.cli.common.KobwebExecutionEnvironment
@@ -15,6 +16,7 @@ import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warn
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
 import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
+import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.common.navigation.RoutePrefix
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.ServerRequest
@@ -65,17 +67,11 @@ fun handleRun(
     gradleArgsStart: List<String>,
     gradleArgsStop: List<String>,
 ) {
-    val originalEnv = env
-
-    @Suppress("NAME_SHADOWING") // We're intentionally intercepting the original value
-    val env = env.takeIf { siteLayout != SiteLayout.STATIC } ?: ServerEnvironment.PROD
-
     val kobwebExecutionEnvironment = findKobwebExecutionEnvironment(env, projectDir.toPath(), useAnsi)
         ?: return // Error message already printed
 
     kobwebExecutionEnvironment.use {
         handleRun(
-            originalEnv,
             env,
             siteLayout,
             useAnsi,
@@ -89,7 +85,6 @@ fun handleRun(
 }
 
 private fun handleRun(
-    originalEnv: ServerEnvironment,
     env: ServerEnvironment,
     siteLayout: SiteLayout,
     useAnsi: Boolean,
@@ -115,25 +110,8 @@ private fun handleRun(
 
             newline() // Put space between user prompt and eventual first line of Gradle output
 
-            if (siteLayout == SiteLayout.STATIC) {
+            if (siteLayout.isStatic) {
                 showStaticSiteLayoutWarning()
-
-                if (originalEnv == ServerEnvironment.DEV) {
-                    section {
-                        // Brighten the color to contrast with the warning above
-                        yellow(isBright = true) {
-                            textLine(
-                                """
-                            Note: Development mode is not designed to work with static layouts, so the
-                            server will run in production mode instead.
-
-                            To avoid seeing this message, use `--env prod` explicitly.
-                            """.trimIndent()
-                            )
-                        }
-                        textLine()
-                    }.run()
-                }
             }
 
             val envName = when (env) {
@@ -295,12 +273,17 @@ private fun handleRun(
     if (runInPlainMode) {
         kobwebApplication.assertServerNotAlreadyRunning()
 
-        // If we're non-interactive, it means we just want to start the Kobweb server and exit without waiting for
-        // for any additional changes. (This is essentially used when run in a web server environment)
-        kobwebGradle.startServer(enableLiveReloading = false, siteLayout, gradleArgsCommon + gradleArgsStart)
-            .also { it.waitFor() }
         if (gradleArgsStop.isNotEmpty()) {
             println("Warning: --gradle-stop is ignored when running in non-interactive mode (which does not stop the server).")
+        }
+
+        // If we're non-interactive, it means we just want to start the Kobweb server and exit without waiting for
+        // for any additional changes. (This is essentially used when run in a web server environment)
+        val runFailed = kobwebGradle
+            .startServer(enableLiveReloading = false, siteLayout, gradleArgsCommon + gradleArgsStart)
+            .waitForAndCheckForException() != null
+        if (runFailed) {
+            throw CliktError("Failed to start a Kobweb server. Please check Gradle output and resolve any errors before retrying.")
         }
 
         val serverStateFile = ServerStateFile(kobwebApplication.kobwebFolder)
