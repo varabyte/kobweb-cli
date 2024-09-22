@@ -54,7 +54,7 @@ private fun RenderScope.renderTemplateItem(
 }
 
 
-fun handleCreate(repo: String, branch: String, templateName: String?) = session {
+fun handleCreate(repo: String, branch: String?, templateName: String?) = session {
     val gitClient = findGit() ?: return@session
     val tempDir = handleFetch(gitClient, repo, branch) ?: return@session
 

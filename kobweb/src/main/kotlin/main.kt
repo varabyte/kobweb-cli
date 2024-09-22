@@ -1,10 +1,11 @@
-import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.core.NoOpCliktCommand
+import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.CoreCliktCommand
 import com.github.ajalt.clikt.core.ParameterHolder
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
-import com.github.ajalt.clikt.output.CliktHelpFormatter
+import com.github.ajalt.clikt.output.PlaintextHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.convert
@@ -13,9 +14,9 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.validate
+import com.github.ajalt.clikt.parameters.transform.message
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
-import com.varabyte.kobweb.cli.common.DEFAULT_BRANCH
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
 import com.varabyte.kobweb.cli.common.Globals
 import com.varabyte.kobweb.cli.common.ProgramArgsKey
@@ -111,14 +112,20 @@ private fun shouldUseAnsi(tty: Int, notty: Int): Boolean {
         ?: true
 }
 
+open class NoOpCliktCommand : CoreCliktCommand() {
+    override fun run() {}
+}
+
 fun main(args: Array<String>) {
     Globals[ProgramArgsKey] = args
 
     /**
      * Common functionality for all Kobweb subcommands.
      */
-    abstract class KobwebSubcommand(help: String) : CliktCommand(help = help) {
+    abstract class KobwebSubcommand(private val help: String) : CoreCliktCommand() {
         private var newVersionAvailable: SemVer.Parsed? = null
+
+        override fun help(context: Context): String = help
 
         /**
          * If true, do an upgrade check while this command is running.
@@ -173,10 +180,16 @@ fun main(args: Array<String>) {
         protected abstract fun doRun()
     }
 
+    // The Kobweb command itself doesn't do anything; it delegates everything to subcommands.
     class Kobweb : NoOpCliktCommand() {
         init {
             context {
-                helpFormatter = CliktHelpFormatter(showDefaultValues = true)
+                helpFormatter = { context ->
+                    PlaintextHelpFormatter(
+                        context = context,
+                        showDefaultValues = true,
+                    )
+                }
                 helpOptionNames += "help" // Allows "kobweb help" to work
             }
         }
@@ -191,7 +204,7 @@ fun main(args: Array<String>) {
 
     class List : KobwebSubcommand(help = "List all project templates") {
         val repo by option(help = "The repository that hosts Kobweb templates.").default(DEFAULT_REPO)
-        val branch by option(help = "The branch in the repository to use.").default(DEFAULT_BRANCH)
+        val branch by option(help = "The branch in the repository to use. If not specified, git will attempt to use the repo's default branch.")
 
         override fun shouldCheckForUpgrade() = true
         override fun doRun() {
@@ -202,7 +215,7 @@ fun main(args: Array<String>) {
     class Create : KobwebSubcommand(help = "Create a Kobweb app / site from a template") {
         val template by argument(help = "The name of the template to instantiate, e.g. 'app'. If not specified, choices will be presented.").optional()
         val repo by option(help = "The repository that hosts Kobweb templates.").default(DEFAULT_REPO)
-        val branch by option(help = "The branch in the repository to use.").default(DEFAULT_BRANCH)
+        val branch by option(help = "The branch in the repository to use. If not specified, git will attempt to use the repo's default branch.")
 
         // Don't check for an upgrade on create, because the user probably just installed kobweb anyway, and the update
         // message kind of overwhelms the instructions to start running the app.

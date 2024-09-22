@@ -1,6 +1,5 @@
 package com.varabyte.kobweb.cli.list
 
-import com.varabyte.kobweb.cli.common.DEFAULT_BRANCH
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
 import com.varabyte.kobweb.cli.common.findGit
 import com.varabyte.kobweb.cli.common.handleFetch
@@ -37,7 +36,7 @@ private fun List<KobwebTemplateFile>.renderTemplateItems(
         .forEach { template -> renderScope.renderTemplateItem(rootPath, template) }
 }
 
-fun handleList(repo: String, branch: String) = session {
+fun handleList(repo: String, branch: String?) = session {
     val gitClient = findGit() ?: return@session
     val tempDir = handleFetch(gitClient, repo, branch) ?: return@session
 
@@ -54,7 +53,7 @@ fun handleList(repo: String, branch: String) = session {
             if (repo != DEFAULT_REPO) {
                 text(" --repo $repo")
             }
-            if (branch != DEFAULT_BRANCH) {
+            if (branch != null) {
                 text(" --branch $branch")
             }
             textLine("`")
