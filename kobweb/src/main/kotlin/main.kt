@@ -1,10 +1,11 @@
-import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.core.NoOpCliktCommand
+import com.github.ajalt.clikt.core.Context
+import com.github.ajalt.clikt.core.CoreCliktCommand
 import com.github.ajalt.clikt.core.ParameterHolder
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
-import com.github.ajalt.clikt.output.CliktHelpFormatter
+import com.github.ajalt.clikt.output.PlaintextHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.convert
@@ -13,6 +14,7 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.validate
+import com.github.ajalt.clikt.parameters.transform.message
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
@@ -110,14 +112,20 @@ private fun shouldUseAnsi(tty: Int, notty: Int): Boolean {
         ?: true
 }
 
+open class NoOpCliktCommand : CoreCliktCommand() {
+    override fun run() {}
+}
+
 fun main(args: Array<String>) {
     Globals[ProgramArgsKey] = args
 
     /**
      * Common functionality for all Kobweb subcommands.
      */
-    abstract class KobwebSubcommand(help: String) : CliktCommand(help = help) {
+    abstract class KobwebSubcommand(private val help: String) : CoreCliktCommand() {
         private var newVersionAvailable: SemVer.Parsed? = null
+
+        override fun help(context: Context): String = help
 
         /**
          * If true, do an upgrade check while this command is running.
@@ -172,10 +180,16 @@ fun main(args: Array<String>) {
         protected abstract fun doRun()
     }
 
+    // The Kobweb command itself doesn't do anything; it delegates everything to subcommands.
     class Kobweb : NoOpCliktCommand() {
         init {
             context {
-                helpFormatter = CliktHelpFormatter(showDefaultValues = true)
+                helpFormatter = { context ->
+                    PlaintextHelpFormatter(
+                        context = context,
+                        showDefaultValues = true,
+                    )
+                }
                 helpOptionNames += "help" // Allows "kobweb help" to work
             }
         }

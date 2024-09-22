@@ -1,5 +1,5 @@
 [versions]
-clikt = "3.5.2"
+clikt = "5.0.1"
 freemarker = "2.3.31"
 jreleaser = "1.14.0"
 kobweb-cli = "0.9.17-SNAPSHOT"
@@ -11,7 +11,7 @@ okhttp = "4.12.0"
 shadow = "8.1.1"
 
 [libraries]
-clikt = { module = "com.github.ajalt.clikt:clikt", version.ref = "clikt" }
+clikt-core = { module = "com.github.ajalt.clikt:clikt-core", version.ref = "clikt" }
 freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 kobweb-common = { module = "com.varabyte.kobweb:kobweb-common", version.ref = "kobweb-libs" }
 kotter = { module = "com.varabyte.kotter:kotter", version.ref = "kotter" }
