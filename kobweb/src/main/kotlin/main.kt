@@ -15,7 +15,6 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
-import com.varabyte.kobweb.cli.common.DEFAULT_BRANCH
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
 import com.varabyte.kobweb.cli.common.Globals
 import com.varabyte.kobweb.cli.common.ProgramArgsKey
@@ -191,7 +190,7 @@ fun main(args: Array<String>) {
 
     class List : KobwebSubcommand(help = "List all project templates") {
         val repo by option(help = "The repository that hosts Kobweb templates.").default(DEFAULT_REPO)
-        val branch by option(help = "The branch in the repository to use.").default(DEFAULT_BRANCH)
+        val branch by option(help = "The branch in the repository to use. If not specified, git will attempt to use the repo's default branch.")
 
         override fun shouldCheckForUpgrade() = true
         override fun doRun() {
@@ -202,7 +201,7 @@ fun main(args: Array<String>) {
     class Create : KobwebSubcommand(help = "Create a Kobweb app / site from a template") {
         val template by argument(help = "The name of the template to instantiate, e.g. 'app'. If not specified, choices will be presented.").optional()
         val repo by option(help = "The repository that hosts Kobweb templates.").default(DEFAULT_REPO)
-        val branch by option(help = "The branch in the repository to use.").default(DEFAULT_BRANCH)
+        val branch by option(help = "The branch in the repository to use. If not specified, git will attempt to use the repo's default branch.")
 
         // Don't check for an upgrade on create, because the user probably just installed kobweb anyway, and the update
         // message kind of overwhelms the instructions to start running the app.

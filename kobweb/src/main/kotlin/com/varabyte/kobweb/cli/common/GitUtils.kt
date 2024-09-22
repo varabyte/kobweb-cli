@@ -60,7 +60,7 @@ class GitClient {
 
     fun clone(
         repo: String,
-        branch: String,
+        branch: String?,
         into: Path,
         shallow: Boolean = true,
     ) {
@@ -70,8 +70,10 @@ class GitClient {
             args.add("1")
         }
         args.add(repo)
-        args.add("-b")
-        args.add(branch)
+        if (branch != null) {
+            args.add("-b")
+            args.add(branch)
+        }
         args.add(into.absolutePathString())
 
         git(*args.toTypedArray())
