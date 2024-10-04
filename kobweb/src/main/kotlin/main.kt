@@ -5,7 +5,6 @@ import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
-import com.github.ajalt.clikt.output.PlaintextHelpFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.convert
@@ -27,6 +26,7 @@ import com.varabyte.kobweb.cli.common.version.reportUpdateAvailable
 import com.varabyte.kobweb.cli.conf.handleConf
 import com.varabyte.kobweb.cli.create.handleCreate
 import com.varabyte.kobweb.cli.export.handleExport
+import com.varabyte.kobweb.cli.help.KotterHelpFormatter
 import com.varabyte.kobweb.cli.list.handleList
 import com.varabyte.kobweb.cli.run.handleRun
 import com.varabyte.kobweb.cli.stop.handleStop
@@ -185,7 +185,7 @@ fun main(args: Array<String>) {
         init {
             context {
                 helpFormatter = { context ->
-                    PlaintextHelpFormatter(
+                    KotterHelpFormatter(
                         context = context,
                         showDefaultValues = true,
                     )
