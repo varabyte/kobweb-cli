@@ -1,9 +1,13 @@
+import com.github.ajalt.clikt.core.Abort
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
 import com.github.ajalt.clikt.core.ParameterHolder
+import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
+import com.github.ajalt.clikt.output.Localization
+import com.github.ajalt.clikt.output.ParameterFormatter
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.groups.mutuallyExclusiveOptions
@@ -241,7 +245,7 @@ fun main(args: Array<String>) {
         val foreground by option(
             "-f",
             "--foreground",
-            help = "Keep kobweb running in the foreground. This value is ignored unless in --notty mode."
+            help = "Keep kobweb running in the foreground. This value can only be specified in --notty mode."
         ).flag(default = false)
         val layout by layout()
         val path by path()
@@ -251,6 +255,13 @@ fun main(args: Array<String>) {
 
         override fun shouldCheckForUpgrade() = ttyMode.shouldUseAnsi()
         override fun doRun() {
+            if (foreground && ttyMode != TeleTypeMode.DISABLED) {
+                throw object : UsageError(null) {
+                    override fun formatMessage(localization: Localization, formatter: ParameterFormatter): String {
+                        return "The foreground flag is only valid when running in ${formatter.formatOption("--notty")} mode."
+                    }
+                }
+            }
             handleRun(
                 env,
                 path,
