@@ -1,14 +1,14 @@
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
 import com.github.ajalt.clikt.core.ParameterHolder
-import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.optional
+import com.github.ajalt.clikt.parameters.groups.mutuallyExclusiveOptions
+import com.github.ajalt.clikt.parameters.groups.single
 import com.github.ajalt.clikt.parameters.options.convert
-import com.github.ajalt.clikt.parameters.options.counted
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
@@ -57,6 +57,15 @@ private fun ParameterHolder.layout() = option(
         }
     }
 
+enum class TeleTypeMode {
+    ENABLED,
+    DISABLED,
+}
+
+fun TeleTypeMode?.shouldUseAnsi(): Boolean {
+    return this == null || this == TeleTypeMode.ENABLED
+}
+
 // We use `absoluteFile` so that the parent directories are directly accessible. This is necessary for the gradle
 // tooling api to be able to get the root project configuration if the kobweb module is a subproject.
 private fun ParameterHolder.path() = option(
@@ -67,15 +76,16 @@ private fun ParameterHolder.path() = option(
     .convert { it.absoluteFile as File } // cast platform type to explicitly not nullable
     .default(File(".").absoluteFile, defaultForHelp = "the current directory")
 
-private fun ParameterHolder.tty() = option(
-    "-t", "--tty",
-    help = "Enable TTY support (default). Tries to run using ANSI support in an interactive mode if it can. Falls back to `--notty` otherwise."
-).counted().validate { require(it <= 1) { "Cannot specify `--tty` more than once" } }
-
-private fun ParameterHolder.notty() = option(
-    "--notty",
-    help = "Explicitly disable TTY support. In this case, runs in plain mode, logging output sequentially without listening for user input, which is useful for CI environments or Docker containers.",
-).counted().validate { require(it <= 1) { "Cannot specify `--notty` more than once" } }
+private fun ParameterHolder.ttyMode() = mutuallyExclusiveOptions(
+    option(
+        "-t", "--tty",
+        help = "Enable TTY support (default). Tries to run using ANSI support in an interactive mode if it can. Falls back to `--notty` otherwise."
+    ).flag().convert { TeleTypeMode.ENABLED },
+    option(
+        "--notty",
+        help = "Explicitly disable TTY support. In this case, runs in plain mode, logging output sequentially without listening for user input, which is useful for CI environments or Docker containers.",
+    ).flag().convert { TeleTypeMode.DISABLED },
+).single()
 
 private fun ParameterHolder.gradleArgs(suffix: String? = null) = option(
     "--gradle" + (suffix?.let { "-$it" } ?: ""),
@@ -88,29 +98,6 @@ private fun ParameterHolder.gradleArgs(suffix: String? = null) = option(
 )
     .convert { args -> args.split(' ').filter { it.isNotBlank() } }
     .default(emptyList(), defaultForHelp = "none")
-
-/**
- * Resolve the current way to determine if we should use ANSI support.
- *
- * We currently have two approaches, the current way and the legacy way, to determine if we should try running with ANSI
- * support. This helper function resolves them, preferring the current way if present, or falling back to the legacy way
- * with a warning otherwise. If neither is present, we default to true.
- *
- * Note: tty and notty are ints, as they are treated as counting flags so we can differentiate if they are set or not.
- * Even though we expect them to be only set once or never.
- */
-@Suppress("NAME_SHADOWING")
-private fun shouldUseAnsi(tty: Int, notty: Int): Boolean {
-    val tty = true.takeIf { tty > 0 }
-    val notty = true.takeIf { notty > 0 }
-
-    if (tty != null && notty != null) {
-        throw UsageError("Both `--tty` and `--notty` are specified simultaneously.")
-    }
-    return tty
-        ?: notty?.not()
-        ?: true
-}
 
 open class NoOpCliktCommand : CoreCliktCommand() {
     override fun run() {}
@@ -227,20 +214,19 @@ fun main(args: Array<String>) {
     }
 
     class Export : KobwebSubcommand(help = "Generate a static version of a Kobweb app / site") {
-        val tty by tty()
-        val notty by notty()
+        val ttyMode by ttyMode()
         val layout by layout()
         val path by path()
         val gradleArgsCommon by gradleArgs()
         val gradleArgsExport by gradleArgs("export")
         val gradleArgsStop by gradleArgs("stop")
 
-        override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty)
+        override fun shouldCheckForUpgrade() = ttyMode.shouldUseAnsi()
         override fun doRun() {
             handleExport(
                 path,
                 layout,
-                shouldUseAnsi(tty, notty),
+                ttyMode.shouldUseAnsi(),
                 gradleArgsCommon,
                 gradleArgsExport,
                 gradleArgsStop
@@ -251,8 +237,7 @@ fun main(args: Array<String>) {
     class Run : KobwebSubcommand(help = "Run a Kobweb server") {
         val env by option(help = "Whether the server should run in development mode or production.").enum<ServerEnvironment>()
             .default(ServerEnvironment.DEV)
-        val tty by tty()
-        val notty by notty()
+        val ttyMode by ttyMode()
         val foreground by option(
             "-f",
             "--foreground",
@@ -264,13 +249,13 @@ fun main(args: Array<String>) {
         val gradleArgsStart by gradleArgs("start")
         val gradleArgsStop by gradleArgs("stop")
 
-        override fun shouldCheckForUpgrade() = shouldUseAnsi(tty, notty)
+        override fun shouldCheckForUpgrade() = ttyMode.shouldUseAnsi()
         override fun doRun() {
             handleRun(
                 env,
                 path,
                 layout,
-                shouldUseAnsi(tty, notty),
+                ttyMode.shouldUseAnsi(),
                 foreground,
                 gradleArgsCommon,
                 gradleArgsStart,
@@ -280,8 +265,7 @@ fun main(args: Array<String>) {
     }
 
     class Stop : KobwebSubcommand(help = "Stop a Kobweb server if one is running") {
-        val tty by tty()
-        val notty by notty()
+        val ttyMode by ttyMode()
         val path by path()
         val gradleArgsCommon by gradleArgs()
         val gradleArgsStop by gradleArgs("stop")
@@ -291,7 +275,7 @@ fun main(args: Array<String>) {
         override fun shouldCheckForUpgrade() = false
 
         override fun doRun() {
-            handleStop(path, shouldUseAnsi(tty, notty), gradleArgsCommon, gradleArgsStop)
+            handleStop(path, ttyMode.shouldUseAnsi(), gradleArgsCommon, gradleArgsStop)
         }
     }
 
