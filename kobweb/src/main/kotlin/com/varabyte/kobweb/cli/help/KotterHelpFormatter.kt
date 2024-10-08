@@ -4,6 +4,7 @@ import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.output.AbstractHelpFormatter
 import com.github.ajalt.clikt.output.HelpFormatter
+import com.varabyte.kotter.foundation.text.black
 import com.varabyte.kotter.foundation.text.blue
 import com.varabyte.kotter.foundation.text.bold
 import com.varabyte.kotter.foundation.text.red
@@ -201,7 +202,7 @@ class KotterHelpFormatter(
     //   --env=>>(DEV|PROD)<<
     //   --path=>><path><<
     override fun styleMetavar(metavar: String): String {
-        return inlineAnsiString { yellow { text(metavar) } }
+        return inlineAnsiString { yellow { text(metavar.lowercase()) } }
     }
 
 
@@ -313,7 +314,21 @@ class KotterHelpFormatter(
     }
 
     override fun renderDefinitionDescription(row: DefinitionRow): String {
-        return row.description
+        val optionRegex = Regex("--\\w+") // e.g. "--option"
+        val inlineCodeRegex = Regex("`(\\w+)`") // e.g. "`command`"
+        val defaultValueRegex = Regex("\\(default: (.+)\\)")
+
+        var result = row.description.replace(" (default: none)", "")
+        result = optionRegex.replace(result) { matchResult ->
+            styleOptionName(matchResult.value)
+        }
+        result = inlineCodeRegex.replace(result) { matchResult ->
+            styleMetavar(matchResult.groupValues[1])
+        }
+        result = defaultValueRegex.replace(result) { matchResult ->
+            "(default: ${styleMetavar(matchResult.groupValues[1])})"
+        }
+        return result
     }
 
     // Handle rendering out the list of terms to descriptions.
@@ -356,7 +371,7 @@ class KotterHelpFormatter(
         return rows.joinToString("\n") { row ->
             val term = renderDefinitionTerm(row)
             val rawTerm = row.term.stripAnsiEscapeCodes()
-            val definition = wrap(row.description, width = MAX_CONTENT_WIDTH - maxTermLength - START_PADDING - TERM_DESC_MARGIN)
+            val definition = wrap(renderDefinitionDescription(row), width = MAX_CONTENT_WIDTH - maxTermLength - START_PADDING - TERM_DESC_MARGIN)
                 .replace("\n", "\n$indent")
 
             if (rawTerm.length < MAX_OPTION_DESC_INDENT) {

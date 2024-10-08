@@ -83,7 +83,7 @@ private fun ParameterHolder.path() = option(
 private fun ParameterHolder.ttyMode() = mutuallyExclusiveOptions(
     option(
         "-t", "--tty",
-        help = "Enable TTY support (default). Tries to run using ANSI support in an interactive mode if it can. Falls back to `--notty` otherwise."
+        help = "Enable TTY support (default). Tries to run using ANSI support in an interactive mode if it can. Falls back to --notty otherwise."
     ).flag().convert { TeleTypeMode.ENABLED },
     option(
         "--notty",
@@ -95,7 +95,7 @@ private fun ParameterHolder.gradleArgs(suffix: String? = null) = option(
     "--gradle" + (suffix?.let { "-$it" } ?: ""),
     help =
     if (suffix == null) {
-        "Arguments that will be passed into every Gradle call issued by this command (some Kobweb commands have multiple phases), useful for common configurations like `--quiet`. Surround with quotes for multiple arguments or if there are spaces."
+        "Arguments that will be passed into every Gradle call issued by this command (some Kobweb commands have multiple phases), useful for common configurations like --quiet. Surround with quotes for multiple arguments or if there are spaces."
     } else {
         "Arguments that will be passed to the Gradle call associated with the \"$suffix\" phase specifically."
     }
