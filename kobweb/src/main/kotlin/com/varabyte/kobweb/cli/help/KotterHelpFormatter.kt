@@ -22,6 +22,7 @@ private const val START_PADDING = 2
 // If an option name + meta is too long, add a newline before showing its description, e.g.
 //
 // Options:
+//
 //  --foo        This is a description of foo
 //  -l, --layout=(VERTICAL|HORIZONTAL|GRID)
 //               This is a description of layout <- starts on newline
@@ -142,6 +143,7 @@ class KotterHelpFormatter(
     // Used for option names
     //
     // Options:
+    //
     //  >>--env<<=(DEV|PROD)
     //  >>-h<<
     override fun styleOptionName(name: String): String {
@@ -195,6 +197,7 @@ class KotterHelpFormatter(
     // Example args in option list
     //
     // Options:
+    //
     //   --env=>>(DEV|PROD)<<
     //   --path=>><path><<
     override fun styleMetavar(metavar: String): String {
@@ -252,10 +255,12 @@ class KotterHelpFormatter(
     }
 
     // Options:
+    //
     //   -h, --help  Show this message and exit
     //   --env       The environment to run in
     //
     // Commands:
+    //
     //    run        Run a server
     //    stop       Stop the server
     //
@@ -265,6 +270,7 @@ class KotterHelpFormatter(
         return buildString {
             collectParameterSections(parameters).forEach { (title, content) ->
                 appendLine(title)
+                appendLine()
                 appendLine(content)
                 appendLine()
             }
@@ -274,6 +280,7 @@ class KotterHelpFormatter(
     // A list of options being rendered
     //
     // Options:
+    //
     //   --foo
     //   --bar
     //   --baz
@@ -314,6 +321,7 @@ class KotterHelpFormatter(
     //
     // ```
     // Options:
+    //
     //   --env=(DEV|PROD)  Whether the server should run in development mode or
     //                     production. (default: DEV)
     //   -t, --tty         Enable TTY support (default). Tries to run using ANSI
