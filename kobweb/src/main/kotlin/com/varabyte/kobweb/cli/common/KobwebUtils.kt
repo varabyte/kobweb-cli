@@ -95,10 +95,21 @@ fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
 
 
     val foundPath: Path? = if (!KobwebFolder.isFoundIn(basePath)) {
+        // Frustratingly, both walkTopDown and walkButtomUp seem to visit directories in the same order, whereas we want
+        // folders closer to us (e.g. "site") to be recommended over folders further away (e.g. "subdir/site").
+        // So we'll sort by depth ourselves.
+        fun Sequence<Path>.sortedByDepth(): Sequence<Path> {
+            return sortedBy { p ->
+                p.relativeToCurrentDirectoryOrBasePath().toString().count { it == '/' || it == '\\' }
+            }
+        }
+
         val candidates = try {
-            basePath.toFile().walkTopDown().maxDepth(2)
-                .filter { it.isDirectory && KobwebFolder.isFoundIn(it.toPath()) }
+            basePath.toFile().walk().maxDepth(2)
+                .filter { it.isDirectory }
                 .map { it.toPath() }
+                .filter { KobwebFolder.isFoundIn(it) }
+                .sortedByDepth()
                 .toList()
         } catch(ex: Exception) {
             // If this happens, we definitely don't have access to projects to recommend to users.
