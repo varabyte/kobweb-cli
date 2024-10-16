@@ -3,6 +3,7 @@ package com.varabyte.kobweb.cli.stop
 import com.github.ajalt.clikt.core.CliktError
 import com.varabyte.kobweb.cli.common.Anims
 import com.varabyte.kobweb.cli.common.KobwebExecutionEnvironment
+import com.varabyte.kobweb.cli.common.KobwebGradle
 import com.varabyte.kobweb.cli.common.findKobwebExecutionEnvironment
 import com.varabyte.kobweb.cli.common.isServerAlreadyRunning
 import com.varabyte.kobweb.cli.common.kotter.handleConsoleOutput
@@ -15,6 +16,7 @@ import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kotter.foundation.anim.textAnimOf
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.text.textLine
+import com.varabyte.kotter.runtime.Session
 import java.io.File
 
 private enum class StopState {
@@ -34,6 +36,34 @@ fun handleStop(projectDir: File, useAnsi: Boolean, gradleArgsCommon: List<String
     }
 }
 
+fun Session.handleStop(
+    kobwebGradle: KobwebGradle,
+    gradleArgsCommon: List<String>,
+    gradleArgsStop: List<String>
+) {
+    val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
+    var stopState by liveVarOf(StopState.STOPPING)
+    section {
+        textLine() // Add text line between this block and Gradle output above
+
+        when (stopState) {
+            StopState.STOPPING -> {
+                textLine("Stopping a Kobweb server$ellipsisAnim")
+            }
+
+            StopState.STOPPED -> {
+                textLine("Server was stopped.")
+            }
+        }
+    }.run {
+        kobwebGradle.onStarting = ::informGradleStarting
+        val stopServerProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop)
+        stopServerProcess.lineHandler = ::handleConsoleOutput
+        stopServerProcess.waitFor()
+        stopState = StopState.STOPPED
+    }
+}
+
 private fun handleStop(
     useAnsi: Boolean,
     kobwebExecutionEnvironment: KobwebExecutionEnvironment,
@@ -47,28 +77,7 @@ private fun handleStop(
     if (useAnsi && !trySession {
             if (kobwebApplication.isServerAlreadyRunning()) {
                 newline() // Put space between user prompt and eventual first line of Gradle output
-
-                val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
-                var stopState by liveVarOf(StopState.STOPPING)
-                section {
-                    textLine() // Add text line between this block and Gradle output above
-
-                    when (stopState) {
-                        StopState.STOPPING -> {
-                            textLine("Stopping a Kobweb server$ellipsisAnim")
-                        }
-
-                        StopState.STOPPED -> {
-                            textLine("Server was stopped.")
-                        }
-                    }
-                }.run {
-                    kobwebGradle.onStarting = ::informGradleStarting
-                    val stopServerProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop)
-                    stopServerProcess.lineHandler = ::handleConsoleOutput
-                    stopServerProcess.waitFor()
-                    stopState = StopState.STOPPED
-                }
+                handleStop(kobwebGradle, gradleArgsCommon, gradleArgsStop)
             } else {
                 section {
                     textLine()

@@ -103,7 +103,7 @@ private fun handleRun(
                 warn("User requested running in foreground mode, which will be ignored in interactive mode.")
             }
 
-            if (isServerAlreadyRunningFor(kobwebApplication)) return@trySession
+            if (isServerAlreadyRunningFor(kobwebApplication, kobwebGradle)) return@trySession
 
             val kobwebFolder = kobwebApplication.kobwebFolder
             val conf = findKobwebConfIn(kobwebFolder) ?: return@trySession

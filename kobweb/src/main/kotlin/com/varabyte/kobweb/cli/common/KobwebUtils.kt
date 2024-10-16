@@ -2,17 +2,18 @@ package com.varabyte.kobweb.cli.common
 
 import com.varabyte.kobweb.cli.common.kotter.informError
 import com.varabyte.kobweb.cli.common.kotter.informInfo
-import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.onYesNoChanged
 import com.varabyte.kobweb.cli.common.kotter.textInfoPrefix
 import com.varabyte.kobweb.cli.common.kotter.textQuestionPrefix
 import com.varabyte.kobweb.cli.common.kotter.yesNo
+import com.varabyte.kobweb.cli.stop.handleStop
 import com.varabyte.kobweb.common.error.KobwebException
 import com.varabyte.kobweb.project.KobwebApplication
 import com.varabyte.kobweb.project.KobwebFolder
 import com.varabyte.kobweb.project.conf.KobwebConf
 import com.varabyte.kobweb.project.conf.KobwebConfFile
 import com.varabyte.kobweb.server.api.ServerEnvironment
+import com.varabyte.kobweb.server.api.ServerState
 import com.varabyte.kobweb.server.api.ServerStateFile
 import com.varabyte.kotter.foundation.input.Keys
 import com.varabyte.kotter.foundation.input.onKeyPressed
@@ -62,8 +63,12 @@ fun assertKobwebExecutionEnvironment(env: ServerEnvironment, path: Path): Kobweb
     )
 }
 
+private fun KobwebFolder.queryState(): ServerState? {
+    return ServerStateFile(this).content
+}
+
 fun KobwebFolder.assertServerNotAlreadyRunning() {
-    ServerStateFile(this).content?.let { serverState ->
+    queryState()?.let { serverState ->
         if (serverState.isRunning()) {
             throw KobwebException("Cannot execute this command as a server is already running (PID=${serverState.pid}). Consider running `kobweb stop` if this is unexpected.")
         }
@@ -234,16 +239,46 @@ fun findKobwebExecutionEnvironment(env: ServerEnvironment, root: Path, useAnsi: 
     }
 }
 
+fun Session.isServerAlreadyRunningFor(project: KobwebApplication, kobwebGradle: KobwebGradle): Boolean {
+    project.kobwebFolder.queryState()?.let { serverState ->
+        if (serverState.isRunning()) {
+            informError("A server is already running (PID=${serverState.pid}).")
+            var stopRequested by liveVarOf(false)
+            section {
+                textLine()
+                textQuestionPrefix()
+                textLine("Would you like to stop that server and continue? ")
+                yesNo(stopRequested, default = false)
+                if (stopRequested) {
+                    yellow { textLine("Consider checking other terminals for a running Kobweb process before confirming.") }
+                }
+                textLine()
+            }.runUntilSignal {
+                onYesNoChanged {
+                    stopRequested = isYes
+                    if (shouldAccept) signal()
+                }
+            }
 
-fun Session.isServerAlreadyRunningFor(project: KobwebApplication): Boolean {
-    return try {
-        project.assertServerNotAlreadyRunning()
-        false
-    } catch (ex: KobwebException) {
-        newline()
-        informError(ex.message!!)
-        true
+            return if (!stopRequested) {
+                section {
+                    textLine("Exiting early, thereby leaving the current server running.")
+                    textLine()
+                    textInfoPrefix()
+                    text("You may consider running ")
+                    cyan { text("kobweb stop") }
+                    text(" before proceeding again.")
+                }.run()
+
+                true
+            } else {
+                handleStop(kobwebGradle, emptyList(), emptyList())
+                false
+            }
+        }
     }
+
+    return false
 }
 
 fun Session.findKobwebConfIn(kobwebFolder: KobwebFolder): KobwebConf? {

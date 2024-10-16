@@ -74,7 +74,7 @@ private fun handleExport(
     var runInPlainMode = !useAnsi
 
     if (useAnsi && !trySession {
-            if (isServerAlreadyRunningFor(kobwebApplication)) return@trySession
+            if (isServerAlreadyRunningFor(kobwebApplication, kobwebGradle)) return@trySession
 
             newline() // Put space between user prompt and eventual first line of Gradle output
 
