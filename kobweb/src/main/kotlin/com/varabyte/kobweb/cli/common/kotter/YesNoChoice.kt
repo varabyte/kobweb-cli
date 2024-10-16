@@ -67,6 +67,6 @@ fun RunScope.onYesNoChanged(valueOnCancel: Boolean? = false, block: YesNoScope.(
             else -> null
         }
 
-        yesNoScope?.let { it.block() }
+        yesNoScope?.block()
     }
 }
