@@ -13,6 +13,9 @@ import com.varabyte.kotterx.decorations.BorderCharacters
 import com.varabyte.kotterx.decorations.bordered
 
 val kobwebCliVersion: SemVer.Parsed by lazy {
+    // If you're running into a crash here during development, please add
+    //   -Dkobweb.version=999.999.999
+    // to your VM options.
     SemVer.parse(System.getProperty("kobweb.version").substringBefore('-')) as SemVer.Parsed
 }
 
