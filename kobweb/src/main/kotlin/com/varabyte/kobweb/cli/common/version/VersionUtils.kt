@@ -12,11 +12,10 @@ import com.varabyte.kotter.runtime.Session
 import com.varabyte.kotterx.decorations.BorderCharacters
 import com.varabyte.kotterx.decorations.bordered
 
+private val kobwebCliVersionString get() = System.getProperty("kobweb.version", "0.0.0-SNAPSHOT")
+
 val kobwebCliVersion: SemVer.Parsed by lazy {
-    // If you're running into a crash here during development, please add
-    //   -Dkobweb.version=999.999.999
-    // to your VM options.
-    SemVer.parse(System.getProperty("kobweb.version").substringBefore('-')) as SemVer.Parsed
+    SemVer.parse(kobwebCliVersionString) as SemVer.Parsed
 }
 
 /**

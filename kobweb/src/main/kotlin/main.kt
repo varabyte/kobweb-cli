@@ -25,6 +25,7 @@ import com.varabyte.kobweb.cli.common.Globals
 import com.varabyte.kobweb.cli.common.ProgramArgsKey
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.version.SemVer
+import com.varabyte.kobweb.cli.common.version.isSnapshot
 import com.varabyte.kobweb.cli.common.version.kobwebCliVersion
 import com.varabyte.kobweb.cli.common.version.reportUpdateAvailable
 import com.varabyte.kobweb.cli.conf.handleConf
@@ -129,6 +130,10 @@ fun main(args: Array<String>) {
         protected open fun shouldCheckForUpgrade(): Boolean = false
 
         private fun checkForUpgradeAsync() {
+            // No need to check for new versions if we're in development mode
+            // (which is the only time we'd see a snapshot version here).
+            if (kobwebCliVersion.isSnapshot) return
+
             CoroutineScope(Dispatchers.IO).launch {
                 val client = OkHttpClient()
                 val latestVersionRequest =
