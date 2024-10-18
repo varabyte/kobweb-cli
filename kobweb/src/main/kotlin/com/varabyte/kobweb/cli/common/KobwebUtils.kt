@@ -28,6 +28,7 @@ import com.varabyte.kotter.runtime.Session
 import java.io.Closeable
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.exists
 
 /**
  * Classes needed for the CLI to be able to execute commands for the current Kobweb project.
@@ -52,8 +53,18 @@ fun assertKobwebApplication(path: Path): KobwebApplication {
 }
 
 fun assertKobwebConfIn(kobwebFolder: KobwebFolder): KobwebConf {
-    return KobwebConfFile(kobwebFolder).content
-        ?: throw KobwebException("A .kobweb folder's `conf.yaml` file seems to have been deleted at some point. This is not expected and Kobweb cannot run without it. Consider restoring your `conf.yaml` file from source control history if possible, or create a new, temporary Kobweb project from scratch and copy its `conf.yaml` file over, modifying it as necessary.")
+    val confFile = KobwebConfFile(kobwebFolder)
+    return confFile.content
+        ?: run {
+            // We want the relative path name INCLUDING the parent folder name
+            // e.g. ".kobweb/conf.yaml"
+            val relativePath = confFile.path.subpath(kobwebFolder.path.nameCount - 1, confFile.path.nameCount)
+            if (!confFile.path.exists()) {
+                throw KobwebException("The file `${relativePath}` seems to have been deleted at some point. This is not expected and Kobweb cannot run without it. Consider restoring your `conf.yaml` file from source control history if possible, or create a new, temporary Kobweb project from scratch and copy its `conf.yaml` file over, modifying it as necessary.")
+            } else {
+                throw KobwebException("The file `${relativePath}` cannot be loaded for some reason. Please open it up in an editor and check for syntax errors.")
+            }
+        }
 }
 
 fun assertKobwebExecutionEnvironment(env: ServerEnvironment, path: Path): KobwebExecutionEnvironment {
