@@ -114,3 +114,5 @@ sealed interface SemVer {
 
 val SemVer.Parsed.isSnapshot: Boolean
     get() = preRelease == "SNAPSHOT"
+
+fun SemVer.Parsed.withoutPreRelease() = if (this.preRelease == null) this else SemVer.Parsed(major, minor, patch)

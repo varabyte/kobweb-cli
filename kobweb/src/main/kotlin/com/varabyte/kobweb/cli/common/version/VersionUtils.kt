@@ -27,13 +27,17 @@ val kobwebCliVersion: SemVer.Parsed by lazy {
 @Suppress("RedundantIf") // Code is more readable when symmetric
 val KobwebTemplate.versionIsSupported: Boolean
     get() {
+        // Don't consider pre-release versions for compatibility checks
+        // e.g. `1.2.3-SNAPSHOT` should be able to create `1.2.3` templates
+        val ourVersion = kobwebCliVersion.withoutPreRelease()
+
         val minVersion = metadata.minimumVersion?.let { SemVer.parse(it) as? SemVer.Parsed }
-        if (minVersion != null && minVersion > kobwebCliVersion) {
+        if (minVersion != null && minVersion > ourVersion) {
             return false
         }
 
         val maxVersion = metadata.maximumVersion?.let { SemVer.parse(it) as? SemVer.Parsed }
-        if (maxVersion != null && maxVersion < kobwebCliVersion) {
+        if (maxVersion != null && maxVersion < ourVersion) {
             return false
         }
 
