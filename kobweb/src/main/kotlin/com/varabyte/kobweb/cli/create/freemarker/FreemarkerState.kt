@@ -17,6 +17,7 @@ import com.varabyte.kobweb.cli.create.freemarker.methods.IsPositiveNumberMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.IsYesNoMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.NotMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.PackageToPathMethod
+import com.varabyte.kobweb.cli.create.freemarker.methods.EscapeYamlStringMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.YesNoToBoolMethod
 import com.varabyte.kobweb.common.error.KobwebException
 import com.varabyte.kobweb.common.path.invariantSeparatorsPath
@@ -59,6 +60,7 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
         // endregion
 
         // region Converters
+        "escapeYamlString" to EscapeYamlStringMethod(), // Added in 0.9.17
         "fileToTitle" to FileToTitleMethod(),
         "fileToPackage" to FileToPackageMethod(),
         "not" to NotMethod(),
