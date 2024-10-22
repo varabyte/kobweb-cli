@@ -279,22 +279,26 @@ private fun handleRun(
                 // Only wait for a running server if at least one task has run. If the user cancelled their run before
                 // that early, the chance of a server starting is zero.
                 if (runState == RunState.CANCELLED && gradleAlertBundle.hasFirstTaskRun) {
-                    var remainingTimeMs by liveVarOf(5000) // In tests, we usually detect a server within 2 seconds.
+                    val timeToWaitMs = 5000
+                    var remainingTimeMs by liveVarOf(timeToWaitMs) // In tests, we usually detect a server within 2 seconds.
 
                     fun Int.msToSecTimeString() = "${this / 1000}.${(this % 1000).toString().padEnd(3, '0')}s"
 
                     section {
                         textLine()
+                        textLine("Depending on timing, a server might still start up despite a cancellation request.")
+                        textLine("We'll wait for ${timeToWaitMs / 1000.0}s to see if a server starts up.")
+                        textLine()
                         if (!runningServerDetected && remainingTimeMs > 0) {
-                            textLine("Depending on timing, a server might still start up despite a cancellation request.")
                             textLine("Watching for a Kobweb server. (Remaining time: ${remainingTimeMs.msToSecTimeString()})")
                             textLine()
                             textLine("Press any key to abort this check.")
                         } else {
                             if (runningServerDetected) {
-                                textInfo("Server started up after cancellation request! Shutting it down.")
+                                textInfo("Server started up after cancellation request. Shutting it down.")
                             }
                         }
+                        textLine()
                     }.runUntilSignal {
                         addTimer(Anim.ONE_FRAME_60FPS, repeat = true) {
                             remainingTimeMs -= elapsed.inWholeMilliseconds.toInt()
