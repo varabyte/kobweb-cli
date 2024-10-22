@@ -283,7 +283,7 @@ fun Session.isServerAlreadyRunningFor(project: KobwebApplication, kobwebGradle: 
 
                 true
             } else {
-                handleStop(kobwebGradle, emptyList(), emptyList())
+                handleStop(kobwebGradle)
                 false
             }
         }

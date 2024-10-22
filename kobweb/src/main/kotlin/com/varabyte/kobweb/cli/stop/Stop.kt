@@ -36,6 +36,8 @@ fun handleStop(projectDir: File, useAnsi: Boolean, gradleArgsCommon: List<String
     }
 }
 
+fun Session.handleStop(kobwebGradle: KobwebGradle) = handleStop(kobwebGradle, emptyList(), emptyList())
+
 fun Session.handleStop(
     kobwebGradle: KobwebGradle,
     gradleArgsCommon: List<String>,
