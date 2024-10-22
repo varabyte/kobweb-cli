@@ -223,7 +223,7 @@ private fun handleRun(
                                 CoroutineScope(Dispatchers.IO).launch {
                                     startServerProcess.cancel()
                                     startServerProcess.onCompleted = {
-                                        cancelReason = "User quit before server could finish starting up"
+                                        cancelReason = "User quit before server could confirm it had started up."
                                         runState = RunState.CANCELLED
                                         signal()
                                     }
