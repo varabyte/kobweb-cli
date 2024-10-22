@@ -34,7 +34,6 @@ import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.shutdown.addShutdownHook
-import com.varabyte.kotter.foundation.text.bold
 import com.varabyte.kotter.foundation.text.cyan
 import com.varabyte.kotter.foundation.text.green
 import com.varabyte.kotter.foundation.text.red
@@ -124,11 +123,12 @@ private fun handleRun(
             }
             val serverStateFile = ServerStateFile(kobwebFolder)
 
-            val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
-            var runState by liveVarOf(RunState.STARTING)
             val gradleAlertBundle = GradleAlertBundle(this)
+            var userRequestedCancelWhileBuilding = false
 
             run {
+                val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
+                var runState by liveVarOf(RunState.STARTING)
                 var serverState: ServerState? = null // Set on and after RunState.RUNNING
                 var cancelReason by liveVarOf("")
                 var exception by liveVarOf<Exception?>(null) // Set if RunState.INTERRUPTED
@@ -225,6 +225,7 @@ private fun handleRun(
                                     startServerProcess.onCompleted = {
                                         cancelReason = "User quit before server could confirm it had started up."
                                         runState = RunState.CANCELLED
+                                        userRequestedCancelWhileBuilding = true
                                         signal()
                                     }
                                 }
@@ -278,9 +279,8 @@ private fun handleRun(
                 var runningServerDetected by liveVarOf(false)
                 // Only wait for a running server if at least one task has run. If the user cancelled their run before
                 // that early, the chance of a server starting is zero.
-                if (runState == RunState.CANCELLED && gradleAlertBundle.hasFirstTaskRun) {
-                    val timeToWaitMs = 5000
-                    var remainingTimeMs by liveVarOf(timeToWaitMs) // In tests, we usually detect a server within 2 seconds.
+                if (userRequestedCancelWhileBuilding && gradleAlertBundle.hasFirstTaskRun) {
+                    var remainingTimeMs by liveVarOf(5000) // In practice, we usually detect a server within 2 seconds.
 
                     fun Int.msToSecTimeString() = "${this / 1000}.${(this % 1000).toString().padEnd(3, '0')}s"
 
