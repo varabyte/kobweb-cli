@@ -255,15 +255,20 @@ fun Session.isServerAlreadyRunningFor(project: KobwebApplication, kobwebGradle: 
         if (serverState.isRunning()) {
             informError("A server is already running (PID=${serverState.pid}).")
             var stopRequested by liveVarOf(false)
+            // Only show the warning until the user has confirmed their choice. Otherwise, it looks weird to
+            // leave that warning in the text history.
+            var showWarning by liveVarOf(true)
             section {
                 textLine()
                 textQuestionPrefix()
                 textLine("Would you like to stop that server and continue? ")
                 yesNo(stopRequested, default = false)
-                if (stopRequested) {
-                    yellow { textLine("Consider checking other terminals for a running Kobweb process before confirming.") }
+                if (stopRequested && showWarning) {
+                    yellow { textLine("Consider checking other terminals first for the active Kobweb session you are about to interrupt.") }
                 }
                 textLine()
+            }.onFinishing {
+                showWarning = false
             }.runUntilSignal {
                 onYesNoChanged {
                     stopRequested = isYes
