@@ -126,12 +126,12 @@ private fun handleRun(
 
             val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
             var runState by liveVarOf(RunState.STARTING)
+            val gradleAlertBundle = GradleAlertBundle(this)
 
             run {
                 var serverState: ServerState? = null // Set on and after RunState.RUNNING
                 var cancelReason by liveVarOf("")
                 var exception by liveVarOf<Exception?>(null) // Set if RunState.INTERRUPTED
-                val gradleAlertBundle = GradleAlertBundle(this)
                 // If a route prefix is set, we'll add it to the server URL (at which point we'll need to add slash dividers)
                 val routePrefix = RoutePrefix(conf.site.routePrefix)
                 section {
@@ -276,7 +276,9 @@ private fun handleRun(
 
             run {
                 var runningServerDetected by liveVarOf(false)
-                if (runState == RunState.CANCELLED) {
+                // Only wait for a running server if at least one task has run. If the user cancelled their run before
+                // that early, the chance of a server starting is zero.
+                if (runState == RunState.CANCELLED && gradleAlertBundle.hasFirstTaskRun) {
                     var remainingTimeMs by liveVarOf(5000) // In tests, we usually detect a server within 2 seconds.
 
                     fun Int.msToSecTimeString() = "${this / 1000}.${(this % 1000).toString().padEnd(3, '0')}s"

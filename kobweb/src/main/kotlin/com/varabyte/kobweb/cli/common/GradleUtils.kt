@@ -232,7 +232,8 @@ fun RunScope.handleGradleOutput(line: String, isError: Boolean, onGradleEvent: (
 class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
     private val warnings = session.liveListOf<GradleAlert.Warning>()
     private val errors = session.liveListOf<GradleAlert.Error>()
-    private var hasFirstTaskRun by session.liveVarOf(false)
+    var hasFirstTaskRun by session.liveVarOf(false)
+        private set
     private var startIndex by session.liveVarOf(0)
     private var stuckToEnd = false
     private val maxIndex get() = (warnings.size + errors.size - pageSize).coerceAtLeast(0)
