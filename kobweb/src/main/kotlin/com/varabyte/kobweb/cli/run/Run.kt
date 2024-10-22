@@ -286,17 +286,18 @@ private fun handleRun(
 
                     section {
                         textLine()
-                        textLine("Depending on timing, a server might still start up despite a cancellation request.")
-                        textLine("We'll wait for ${timeToWaitMs / 1000.0}s to see if a server starts up.")
-                        textLine()
-                        if (!runningServerDetected && remainingTimeMs > 0) {
-                            textLine("Watching for a Kobweb server. (Remaining time: ${remainingTimeMs.msToSecTimeString()})")
+                        if (!runningServerDetected) {
+                            textLine("Depending on timing, a server might still start up despite a cancellation request.")
                             textLine()
-                            textLine("Press any key to abort this check.")
-                        } else {
-                            if (runningServerDetected) {
-                                textInfo("Server started up after cancellation request. Shutting it down.")
+                            if (remainingTimeMs > 0) {
+                                textLine("Watching for a Kobweb server. (Remaining: ${remainingTimeMs.msToSecTimeString()})")
+                                textLine()
+                                textLine("Press any key to abort this check.")
+                            } else {
+                                textLine("Server successfully cancelled. Quitting normally.")
                             }
+                        } else {
+                            textInfo("Running server detected after cancellation request. Shutting it down.")
                         }
                         textLine()
                     }.runUntilSignal {
