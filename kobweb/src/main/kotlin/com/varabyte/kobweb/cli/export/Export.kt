@@ -21,7 +21,9 @@ import com.varabyte.kotter.foundation.anim.textAnimOf
 import com.varabyte.kotter.foundation.input.Keys
 import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.liveVarOf
+import com.varabyte.kotter.foundation.text.cyan
 import com.varabyte.kotter.foundation.text.red
+import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
 import java.io.File
@@ -94,7 +96,21 @@ private fun handleExport(
                 when (exportState) {
                     ExportState.EXPORTING -> textLine("Exporting$ellipsis")
                     ExportState.FINISHING -> textLine("Finishing up$ellipsis")
-                    ExportState.FINISHED -> textLine("Export finished successfully")
+                    ExportState.FINISHED -> {
+                        textLine("Export finished successfully.")
+                        textLine()
+
+                        text("You can run ")
+                        cyan {
+                            text(
+                                buildString {
+                                    append("kobweb run --env prod")
+                                    if (siteLayout.isStatic) append(" --layout static")
+                                }
+                            )
+                        }
+                        textLine(" to preview your site.")
+                    }
                     ExportState.CANCELLING -> yellow { textLine("Cancelling export: $cancelReason$ellipsis") }
                     ExportState.CANCELLED -> yellow { textLine("Export cancelled: $cancelReason") }
                     ExportState.INTERRUPTED -> {
