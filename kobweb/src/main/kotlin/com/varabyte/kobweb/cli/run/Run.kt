@@ -222,12 +222,11 @@ private fun handleRun(
                                 runState = RunState.STOPPING
                                 CoroutineScope(Dispatchers.IO).launch {
                                     startServerProcess.cancel()
-                                    startServerProcess.onCompleted = {
-                                        cancelReason = "User quit before server could confirm it had started up."
-                                        runState = RunState.CANCELLED
-                                        userRequestedCancelWhileBuilding = true
-                                        signal()
-                                    }
+                                    startServerProcess.waitFor()
+                                    cancelReason = "User quit before server could confirm it had started up."
+                                    runState = RunState.CANCELLED
+                                    userRequestedCancelWhileBuilding = true
+                                    signal()
                                 }
                             } else if (runState == RunState.RUNNING) {
                                 runState = RunState.STOPPING

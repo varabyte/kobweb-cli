@@ -116,15 +116,6 @@ private fun handleExport(
                 exportProcess.lineHandler = { line, isError ->
                     handleGradleOutput(line, isError) { alert -> gradleAlertBundle.handleAlert(alert) }
                 }
-                exportProcess.onCompleted = { failure ->
-                    if (failure != null) {
-                        if (exportState != ExportState.CANCELLING) {
-                            cancelReason =
-                                "Server failed to build. Please check Gradle output and fix the errors before retrying."
-                            exportState = ExportState.CANCELLING
-                        }
-                    }
-                }
 
                 onKeyPressed {
                     if (exportState == ExportState.EXPORTING && (key == Keys.Q || key == Keys.Q_UPPER)) {
@@ -136,7 +127,13 @@ private fun handleExport(
                     }
                 }
 
-                exportProcess.waitFor()
+                if (exportProcess.waitForAndCheckForException() != null) {
+                    if (exportState != ExportState.CANCELLING) {
+                        cancelReason =
+                            "Server failed to build. Please check Gradle output and fix the errors before retrying."
+                        exportState = ExportState.CANCELLING
+                    }
+                }
                 if (exportState == ExportState.EXPORTING) {
                     exportState = ExportState.FINISHING
                 }

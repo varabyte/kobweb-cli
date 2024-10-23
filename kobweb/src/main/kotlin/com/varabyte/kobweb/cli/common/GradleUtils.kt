@@ -92,11 +92,11 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             }
         }
 
+        // Latch will be counted down by Gradle when it finishes; see ResultHandler code elsewhere.
         internal val latch = CountDownLatch(1)
 
         fun cancel() {
             cancellationSource.cancel()
-            latch.countDown()
         }
 
         fun waitFor() {
