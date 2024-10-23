@@ -277,6 +277,7 @@ private fun handleRun(
 
             run {
                 var runningServerDetected by liveVarOf(false)
+                var checkAborted by liveVarOf(false)
                 // Only wait for a running server if at least one task has run. If the user cancelled their run before
                 // that early, the chance of a server starting is zero.
                 if (userRequestedCancelWhileBuilding && gradleAlertBundle.hasFirstTaskRun) {
@@ -289,12 +290,14 @@ private fun handleRun(
                         if (!runningServerDetected) {
                             textLine("Depending on timing, a server might still start up despite a cancellation request.")
                             textLine()
-                            if (remainingTimeMs > 0) {
+                            if (checkAborted) {
+                                textLine("User skipped check. Consider running `kobweb stop` manually to verify that no server started up.")
+                            } else if (remainingTimeMs > 0) {
                                 textLine("Watching for a Kobweb server. (Remaining: ${remainingTimeMs.msToSecTimeString()})")
                                 textLine()
                                 textLine("Press any key to abort this check.")
                             } else {
-                                textLine("Server successfully cancelled. Quitting normally.")
+                                textLine("Server startup was successfully cancelled.")
                             }
                         } else {
                             textInfo("Running server detected after cancellation request. Shutting it down.")
@@ -305,7 +308,7 @@ private fun handleRun(
                             remainingTimeMs -= elapsed.inWholeMilliseconds.toInt()
                             if (remainingTimeMs < 0) remainingTimeMs = 0
 
-                            runningServerDetected = serverStateFile.content?.isRunning() == true
+                             runningServerDetected = serverStateFile.content?.isRunning() == true
 
                             if (remainingTimeMs == 0 || runningServerDetected) {
                                 repeat = false
@@ -314,6 +317,7 @@ private fun handleRun(
                         }
 
                         onKeyPressed {
+                            checkAborted = true
                             signal()
                         }
                     }
