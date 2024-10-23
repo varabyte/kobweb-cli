@@ -290,7 +290,9 @@ private fun handleRun(
                             textLine("Depending on timing, a server might still start up despite a cancellation request.")
                             textLine()
                             if (checkAborted) {
-                                textLine("User skipped check. Consider running `kobweb stop` manually to verify that no server started up.")
+                                text("User skipped check. Consider running ")
+                                cyan { text("kobweb stop") }
+                                textLine(" later to verify that no server started up.")
                             } else if (remainingTimeMs > 0) {
                                 textLine("Watching for a Kobweb server. (Remaining: ${remainingTimeMs.msToSecTimeString()})")
                                 textLine()
