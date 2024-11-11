@@ -19,7 +19,7 @@ import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
 import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
 import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.cli.stop.handleStop
-import com.varabyte.kobweb.common.navigation.RoutePrefix
+import com.varabyte.kobweb.common.navigation.BasePath
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.ServerRequest
 import com.varabyte.kobweb.server.api.ServerRequestsFile
@@ -132,8 +132,8 @@ private fun handleRun(
                 var serverState: ServerState? = null // Set on and after RunState.RUNNING
                 var cancelReason by liveVarOf("")
                 var exception by liveVarOf<Exception?>(null) // Set if RunState.INTERRUPTED
-                // If a route prefix is set, we'll add it to the server URL (at which point we'll need to add slash dividers)
-                val routePrefix = RoutePrefix(conf.site.routePrefix)
+                // If a base path is set, we'll add it to the server URL (at which point we'll need to add slash dividers)
+                val basePath = BasePath(conf.site.basePathOrRoutePrefix)
                 section {
                     textLine() // Add text line between this block and Gradle output above
 
@@ -149,7 +149,7 @@ private fun handleRun(
                             serverState!!.let { serverState ->
                                 green {
                                     text("Kobweb server ($envName) is running at ")
-                                    cyan { text("http://localhost:${serverState.port}$routePrefix") }
+                                    cyan { text("http://localhost:${serverState.port}$basePath") }
                                 }
                                 textLine(" (PID = ${serverState.pid})")
                                 textLine()
