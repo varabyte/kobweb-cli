@@ -1,4 +1,3 @@
-import com.github.ajalt.clikt.core.Abort
 import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.CoreCliktCommand
 import com.github.ajalt.clikt.core.ParameterHolder
@@ -16,8 +15,6 @@ import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.validate
-import com.github.ajalt.clikt.parameters.transform.message
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
 import com.varabyte.kobweb.cli.common.DEFAULT_REPO
@@ -45,22 +42,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 
-private const val KOBWEB_DEPRECATED_MESSAGE =
-    "NOTE: The option `kobweb` is deprecated and will be removed in a future version. Please use `fullstack` instead."
-
 private fun ParameterHolder.layout() = option(
     "-l", "--layout",
     help = "Specify the organizational layout of the site files."
-            + " " + KOBWEB_DEPRECATED_MESSAGE
 )
     .enum<SiteLayout>()
     .default(SiteLayout.FULLSTACK)
-    .validate {
-        @Suppress("DEPRECATION")
-        if (it == SiteLayout.KOBWEB) {
-            message(KOBWEB_DEPRECATED_MESSAGE)
-        }
-    }
 
 enum class TeleTypeMode {
     ENABLED,
