@@ -20,6 +20,7 @@ import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
 import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.cli.stop.handleStop
 import com.varabyte.kobweb.common.navigation.BasePath
+import com.varabyte.kobweb.project.conf.KobwebConfFile
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.ServerRequest
 import com.varabyte.kobweb.server.api.ServerRequestsFile
@@ -48,6 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.nio.file.Files
 import kotlin.time.Duration.Companion.milliseconds
 
 private enum class RunState {
@@ -99,6 +101,7 @@ private fun handleRun(
 ) {
     val kobwebApplication = kobwebExecutionEnvironment.application
     val kobwebGradle = kobwebExecutionEnvironment.gradle
+    var restartRequested = false
 
     var runInPlainMode = !useAnsi
     if (useAnsi && !trySession {
@@ -129,6 +132,7 @@ private fun handleRun(
             run {
                 val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
                 var runState by liveVarOf(RunState.STARTING)
+                var kobwebConfChanged by liveVarOf(false)
                 var serverState: ServerState? = null // Set on and after RunState.RUNNING
                 var cancelReason by liveVarOf("")
                 var exception by liveVarOf<Exception?>(null) // Set if RunState.INTERRUPTED
@@ -155,6 +159,12 @@ private fun handleRun(
                                 textLine()
                                 gradleAlertBundle.renderInto(this)
                                 textLine("Press Q anytime to stop the server.")
+                                if (kobwebConfChanged) {
+                                    textLine()
+                                    yellow {
+                                        textLine("Kobweb configuration has changed. Press R to restart the server.")
+                                    }
+                                }
                             }
                         }
 
@@ -217,7 +227,7 @@ private fun handleRun(
                     }
 
                     onKeyPressed {
-                        if (key in listOf(Keys.EOF, Keys.Q, Keys.Q_UPPER)) {
+                        if (key in listOf(Keys.EOF, Keys.Q, Keys.Q_UPPER) || (runState == RunState.RUNNING && key == Keys.R)) {
                             if (runState == RunState.STARTING) {
                                 runState = RunState.STOPPING
                                 CoroutineScope(Dispatchers.IO).launch {
@@ -230,6 +240,7 @@ private fun handleRun(
                                 }
                             } else if (runState == RunState.RUNNING) {
                                 runState = RunState.STOPPING
+                                if (key == Keys.R) { restartRequested = true }
                                 CoroutineScope(Dispatchers.IO).launch {
                                     startServerProcess.cancel()
                                     startServerProcess.waitFor()
@@ -253,6 +264,22 @@ private fun handleRun(
                                 serverState = it
                                 runState = RunState.RUNNING
                             } ?: run { delay(300) }
+                        }
+                    }
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        while (runState != RunState.RUNNING) {
+                            delay(1000)
+                        }
+
+                        val kobwebConf = KobwebConfFile(kobwebFolder)
+                        val timestamp = Files.getLastModifiedTime(kobwebConf.path)
+                        while (runState == RunState.RUNNING) {
+                            delay(1000)
+                            if (Files.getLastModifiedTime(kobwebConf.path) != timestamp) {
+                                kobwebConfChanged = true
+                                break
+                            }
                         }
                     }
 
@@ -374,5 +401,18 @@ private fun handleRun(
                 }
             }
         }
+    }
+
+    if (restartRequested) {
+        handleRun(
+            env,
+            siteLayout,
+            useAnsi,
+            runInForeground,
+            kobwebExecutionEnvironment,
+            gradleArgsCommon,
+            gradleArgsStart,
+            gradleArgsStop,
+        )
     }
 }
