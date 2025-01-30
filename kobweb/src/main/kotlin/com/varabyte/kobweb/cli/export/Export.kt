@@ -13,6 +13,7 @@ import com.varabyte.kobweb.cli.common.kotter.informGradleStarting
 import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
+import com.varabyte.kobweb.cli.common.relativeToCurrentDirectory
 import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
 import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.server.api.ServerEnvironment
@@ -104,7 +105,12 @@ private fun handleExport(
                         cyan {
                             text(
                                 buildString {
-                                    append("kobweb run --env prod")
+                                    append("kobweb run")
+                                    kobwebApplication.path.relativeToCurrentDirectory()?.let { relativePath ->
+                                        append(" -p ")
+                                        append(relativePath)
+                                    }
+                                    append(" --env prod")
                                     if (siteLayout.isStatic) append(" --layout static")
                                 }
                             )
