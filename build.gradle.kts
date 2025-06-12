@@ -14,10 +14,11 @@ subprojects {
         mavenCentral()
         maven {
             // For kotter snapshots and Kobweb artifacts
-            url = uri("https://us-central1-maven.pkg.dev/varabyte-repos/public")
-            content {
+            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+            mavenContent {
                 includeGroup("com.varabyte.kotter")
                 includeGroupByRegex("com.varabyte.kobweb.*")
+                snapshotsOnly()
             }
         }
     }
