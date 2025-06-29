@@ -35,11 +35,13 @@ import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.shutdown.addShutdownHook
+import com.varabyte.kotter.foundation.text.black
 import com.varabyte.kotter.foundation.text.cyan
 import com.varabyte.kotter.foundation.text.green
 import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
+import com.varabyte.kotter.foundation.text.white
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.foundation.timer.addTimer
 import kotlinx.coroutines.CoroutineScope
@@ -133,11 +135,12 @@ private fun handleRun(
                 val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
                 var runState by liveVarOf(RunState.STARTING)
                 var kobwebConfChanged by liveVarOf(false)
+                var liveReloadingPaused: Boolean by liveVarOf(false)
                 var serverState: ServerState? = null // Set on and after RunState.RUNNING
                 var cancelReason by liveVarOf("")
                 var exception by liveVarOf<Exception?>(null) // Set if RunState.INTERRUPTED
                 // If a base path is set, we'll add it to the server URL (at which point we'll need to add slash dividers)
-                val basePath = BasePath(conf.site.basePathOrRoutePrefix)
+                val basePath = BasePath(conf.site.basePath)
                 section {
                     textLine() // Add text line between this block and Gradle output above
 
@@ -158,6 +161,15 @@ private fun handleRun(
                                 textLine(" (PID = ${serverState.pid})")
                                 textLine()
                                 gradleAlertBundle.renderInto(this)
+                                scopedState {
+                                    if (liveReloadingPaused) {
+                                        yellow()
+                                    } else {
+                                        white(isBright = false)
+                                    }
+                                    textLine("Press P to pause/resume live reloading [${if (liveReloadingPaused) "OFF" else "ON"}]")
+                                }
+                                textLine()
                                 textLine("Press Q anytime to stop the server.")
                                 if (kobwebConfChanged) {
                                     textLine()
@@ -253,7 +265,13 @@ private fun handleRun(
                                     signal()
                                 }
                             }
-                        } else {
+                        } else if (runState == RunState.RUNNING && key == Keys.P) {
+                            liveReloadingPaused = !liveReloadingPaused
+                            ServerRequestsFile(kobwebApplication.kobwebFolder).enqueueRequest(
+                                if (liveReloadingPaused) ServerRequest.PauseClientEvents() else ServerRequest.ResumeClientEvents()
+                            )
+                        }
+                        else {
                             gradleAlertBundle.handleKey(key)
                         }
                     }
