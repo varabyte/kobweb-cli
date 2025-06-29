@@ -17,7 +17,7 @@ subprojects {
             url = uri("https://central.sonatype.com/repository/maven-snapshots/")
             mavenContent {
                 includeGroup("com.varabyte.kotter")
-                includeGroupByRegex("com.varabyte.kobweb.*")
+                includeGroupByRegex("com\\.varabyte\\.kobwebx?")
                 snapshotsOnly()
             }
         }
