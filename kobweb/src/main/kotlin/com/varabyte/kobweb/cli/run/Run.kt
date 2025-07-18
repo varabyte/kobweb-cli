@@ -18,6 +18,8 @@ import com.varabyte.kobweb.cli.common.kotter.warn
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
 import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
 import com.varabyte.kobweb.cli.common.waitForAndCheckForException
+import com.varabyte.kobweb.cli.help.optionNameColor
+import com.varabyte.kobweb.cli.help.sectionTitleColor
 import com.varabyte.kobweb.cli.stop.handleStop
 import com.varabyte.kobweb.common.navigation.BasePath
 import com.varabyte.kobweb.project.conf.KobwebConfFile
@@ -35,15 +37,15 @@ import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.shutdown.addShutdownHook
-import com.varabyte.kotter.foundation.text.black
+import com.varabyte.kotter.foundation.text.bold
 import com.varabyte.kotter.foundation.text.cyan
 import com.varabyte.kotter.foundation.text.green
 import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
-import com.varabyte.kotter.foundation.text.white
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.foundation.timer.addTimer
+import com.varabyte.kotter.runtime.render.RenderScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -134,6 +136,7 @@ private fun handleRun(
             run {
                 val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
                 var runState by liveVarOf(RunState.STARTING)
+                var showHelp by liveVarOf(false)
                 var kobwebConfChanged by liveVarOf(false)
                 var liveReloadingPaused: Boolean by liveVarOf(false)
                 var serverState: ServerState? = null // Set on and after RunState.RUNNING
@@ -159,18 +162,48 @@ private fun handleRun(
                                     cyan { text("http://localhost:${serverState.port}$basePath") }
                                 }
                                 textLine(" (PID = ${serverState.pid})")
-                                textLine()
-                                gradleAlertBundle.renderInto(this)
-                                scopedState {
-                                    if (liveReloadingPaused) {
-                                        yellow()
-                                    } else {
-                                        white(isBright = false)
+                                if (liveReloadingPaused) {
+                                    yellow {
+                                        textLine("Live reloading is now PAUSED. Press P to unpause.")
                                     }
-                                    textLine("Press P to pause/resume live reloading [${if (liveReloadingPaused) "OFF" else "ON"}]")
                                 }
                                 textLine()
-                                textLine("Press Q anytime to stop the server.")
+                                gradleAlertBundle.renderInto(this)
+
+                                if (!showHelp) {
+                                    textLine("Press Q anytime to stop the server. Press H for help.")
+                                } else {
+                                    sectionTitleColor {
+                                        textLine("Commands:")
+                                    }
+                                    textLine()
+
+                                    val commands = mapOf<String, RenderScope.() -> Unit>(
+                                        "h|help" to { text("Toggle this help view") },
+                                        "q|quit" to { text("Shutdown the server") },
+                                        "p|pause" to {
+                                            text("Toggle live reloading [")
+                                            yellow {
+                                                text(if (liveReloadingPaused) "OFF" else "ON")
+                                            }
+                                            textLine("]")
+                                        }
+                                    )
+
+                                    val longestCommandLength = commands.keys.maxOf { it.length }
+                                    commands
+                                        .forEach { (command, renderDescription) ->
+                                            text("  ")
+                                            val (key, name) = command.split("|", limit = 2)
+                                            optionNameColor { text(key) }
+                                            text("  ")
+                                            bold { text(name) }
+                                            text(" ".repeat(longestCommandLength - command.length) + "  ")
+                                            renderDescription()
+                                            textLine()
+                                        }
+                                }
+
                                 if (kobwebConfChanged) {
                                     textLine()
                                     yellow {
@@ -239,8 +272,14 @@ private fun handleRun(
                     }
 
                     onKeyPressed {
-                        if (key in listOf(Keys.EOF, Keys.Q, Keys.Q_UPPER) || (runState == RunState.RUNNING && key == Keys.R)) {
+                        var keyHandled = false
+                        if (
+                            (runState in listOf(RunState.STARTING, RunState.RUNNING) && key in listOf(
+                                Keys.EOF, Keys.Q, Keys.Q_UPPER))
+                            || (runState == RunState.RUNNING && key == Keys.R)
+                        ) {
                             if (runState == RunState.STARTING) {
+                                keyHandled = true
                                 runState = RunState.STOPPING
                                 CoroutineScope(Dispatchers.IO).launch {
                                     startServerProcess.cancel()
@@ -251,6 +290,7 @@ private fun handleRun(
                                     signal()
                                 }
                             } else if (runState == RunState.RUNNING) {
+                                keyHandled = true
                                 runState = RunState.STOPPING
                                 if (key == Keys.R) { restartRequested = true }
                                 CoroutineScope(Dispatchers.IO).launch {
@@ -265,15 +305,22 @@ private fun handleRun(
                                     signal()
                                 }
                             }
-                        } else if (runState == RunState.RUNNING && key == Keys.P) {
-                            liveReloadingPaused = !liveReloadingPaused
-                            ServerRequestsFile(kobwebApplication.kobwebFolder).enqueueRequest(
-                                if (liveReloadingPaused) ServerRequest.PauseClientEvents() else ServerRequest.ResumeClientEvents()
-                            )
                         }
-                        else {
-                            gradleAlertBundle.handleKey(key)
+
+                        if (!keyHandled && runState == RunState.RUNNING) {
+                            if (key == Keys.H || key == Keys.H_UPPER) {
+                                keyHandled = true
+                                showHelp = !showHelp
+                            } else if (key == Keys.P || key == Keys.P_UPPER) {
+                                keyHandled = true
+                                liveReloadingPaused = !liveReloadingPaused
+                                ServerRequestsFile(kobwebApplication.kobwebFolder).enqueueRequest(
+                                    if (liveReloadingPaused) ServerRequest.PauseClientEvents() else ServerRequest.ResumeClientEvents()
+                                )
+                            }
                         }
+
+                        if (!keyHandled) gradleAlertBundle.handleKey(key)
                     }
 
                     coroutineScope {

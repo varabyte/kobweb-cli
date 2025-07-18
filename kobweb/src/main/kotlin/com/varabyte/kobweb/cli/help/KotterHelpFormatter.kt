@@ -4,7 +4,6 @@ import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.output.AbstractHelpFormatter
 import com.github.ajalt.clikt.output.HelpFormatter
-import com.varabyte.kotter.foundation.text.black
 import com.varabyte.kotter.foundation.text.blue
 import com.varabyte.kotter.foundation.text.bold
 import com.varabyte.kotter.foundation.text.red
@@ -13,6 +12,14 @@ import com.varabyte.kotter.foundation.text.white
 import com.varabyte.kotter.foundation.text.yellow
 import com.varabyte.kotter.runtime.render.RenderScope
 import com.varabyte.kotterx.util.buildAnsiString
+
+fun RenderScope.sectionTitleColor(block: RenderScope.() -> Unit) {
+    yellow(isBright = true) { bold { block() } }
+}
+
+fun RenderScope.optionNameColor(block: RenderScope.() -> Unit) {
+    blue { bold { block() } }
+}
 
 private fun pad(amount: Int) = " ".repeat(amount)
 
@@ -149,7 +156,7 @@ class KotterHelpFormatter(
     //  >>-h<<
     override fun styleOptionName(name: String): String {
         return inlineAnsiString {
-            bold { blue { text(name) } }
+            optionNameColor { text(name) }
         }
     }
 
@@ -179,7 +186,7 @@ class KotterHelpFormatter(
     //   ...
     override fun styleSectionTitle(title: String): String {
         return inlineAnsiString {
-            yellow(isBright = true) { bold { text(title) } }
+            sectionTitleColor { text(title) }
         }
     }
 
