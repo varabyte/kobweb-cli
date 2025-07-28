@@ -17,6 +17,8 @@ import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warn
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
 import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
+import com.varabyte.kobweb.cli.common.version.KobwebServerFeatureVersions
+import com.varabyte.kobweb.cli.common.version.SemVer
 import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.cli.help.optionNameColor
 import com.varabyte.kobweb.cli.help.sectionTitleColor
@@ -52,6 +54,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.File
 import java.nio.file.Files
 import kotlin.time.Duration.Companion.milliseconds
@@ -65,6 +69,8 @@ private enum class RunState {
     CANCELLED,
     INTERRUPTED,
 }
+
+private val ServerState.url: String get() = "http://localhost:$port"
 
 fun handleRun(
     env: ServerEnvironment,
@@ -138,6 +144,7 @@ private fun handleRun(
                 var runState by liveVarOf(RunState.STARTING)
                 var showHelp by liveVarOf(false)
                 var kobwebConfChanged by liveVarOf(false)
+                var canToggleLiveReloading by liveVarOf(false)
                 var liveReloadingPaused: Boolean by liveVarOf(false)
                 var serverState: ServerState? = null // Set on and after RunState.RUNNING
                 var cancelReason by liveVarOf("")
@@ -159,7 +166,7 @@ private fun handleRun(
                             serverState!!.let { serverState ->
                                 green {
                                     text("Kobweb server ($envName) is running at ")
-                                    cyan { text("http://localhost:${serverState.port}$basePath") }
+                                    cyan { text("${serverState.url}$basePath") }
                                 }
                                 textLine(" (PID = ${serverState.pid})")
                                 if (liveReloadingPaused) {
@@ -178,17 +185,19 @@ private fun handleRun(
                                     }
                                     textLine()
 
-                                    val commands = mapOf<String, RenderScope.() -> Unit>(
-                                        "h|help" to { text("Toggle this help view") },
-                                        "q|quit" to { text("Shutdown the server") },
-                                        "p|pause" to {
-                                            text("Toggle live reloading [")
-                                            yellow {
-                                                text(if (liveReloadingPaused) "OFF" else "ON")
+                                    val commands = buildMap<String, RenderScope.() -> Unit> {
+                                        put("h|help") { text("Toggle this help view") }
+                                        put("q|quit") { text("Shutdown the server") }
+                                        if (canToggleLiveReloading) {
+                                            put("p|pause") {
+                                                text("Toggle live reloading [")
+                                                yellow {
+                                                    text(if (liveReloadingPaused) "OFF" else "ON")
+                                                }
+                                                textLine("]")
                                             }
-                                            textLine("]")
                                         }
-                                    )
+                                    }
 
                                     val longestCommandLength = commands.keys.maxOf { it.length }
                                     commands
@@ -311,7 +320,7 @@ private fun handleRun(
                             if (key == Keys.H || key == Keys.H_UPPER) {
                                 keyHandled = true
                                 showHelp = !showHelp
-                            } else if (key == Keys.P || key == Keys.P_UPPER) {
+                            } else if (canToggleLiveReloading && (key == Keys.P || key == Keys.P_UPPER)) {
                                 keyHandled = true
                                 liveReloadingPaused = !liveReloadingPaused
                                 ServerRequestsFile(kobwebApplication.kobwebFolder).enqueueRequest(
@@ -328,6 +337,27 @@ private fun handleRun(
                             serverStateFile.content?.takeIf { it.isRunning() }?.let {
                                 serverState = it
                                 runState = RunState.RUNNING
+
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    val client = OkHttpClient()
+                                    val serverVersionRequest =
+                                        Request.Builder()
+                                            .url("${serverState.url}/api/kobweb-version")
+                                            .build()
+
+                                    client.newCall(serverVersionRequest).execute().use { response ->
+                                        if (response.isSuccessful) {
+                                            response.body?.string()?.trim()
+                                                ?.let { serverVersionStr ->
+                                                    SemVer.tryParse(serverVersionStr)
+                                                }?.let { serverVersion ->
+                                                    if (serverVersion >= KobwebServerFeatureVersions.toggleLiveReloading) {
+                                                        canToggleLiveReloading = true
+                                                    }
+                                                }
+                                        }
+                                    }
+                                }
                             } ?: run { delay(300) }
                         }
                     }

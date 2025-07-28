@@ -16,6 +16,10 @@ private val kobwebCliVersionString get() = System.getProperty("kobweb.version", 
 
 val kobwebCliVersion: SemVer.Parsed by lazy { SemVer.parse(kobwebCliVersionString) }
 
+object KobwebServerFeatureVersions {
+    val toggleLiveReloading by lazy { SemVer.parse("0.23.0") }
+}
+
 /**
  * Returns true if the given template is supported by the current version of the Kobweb CLI.
  *
