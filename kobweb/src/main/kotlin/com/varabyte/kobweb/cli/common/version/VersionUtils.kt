@@ -14,9 +14,7 @@ import com.varabyte.kotterx.decorations.bordered
 
 private val kobwebCliVersionString get() = System.getProperty("kobweb.version", "0.0.0-SNAPSHOT")
 
-val kobwebCliVersion: SemVer.Parsed by lazy {
-    SemVer.parse(kobwebCliVersionString) as SemVer.Parsed
-}
+val kobwebCliVersion: SemVer.Parsed by lazy { SemVer.parse(kobwebCliVersionString) }
 
 /**
  * Returns true if the given template is supported by the current version of the Kobweb CLI.
@@ -31,12 +29,12 @@ val KobwebTemplate.versionIsSupported: Boolean
         // e.g. `1.2.3-SNAPSHOT` should be able to create `1.2.3` templates
         val ourVersion = kobwebCliVersion.withoutPreRelease()
 
-        val minVersion = metadata.minimumVersion?.let { SemVer.parse(it) as? SemVer.Parsed }
+        val minVersion = metadata.minimumVersion?.let { SemVer.tryParse(it) }
         if (minVersion != null && minVersion > ourVersion) {
             return false
         }
 
-        val maxVersion = metadata.maximumVersion?.let { SemVer.parse(it) as? SemVer.Parsed }
+        val maxVersion = metadata.maximumVersion?.let { SemVer.tryParse(it) }
         if (maxVersion != null && maxVersion < ourVersion) {
             return false
         }

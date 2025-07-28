@@ -7,7 +7,7 @@ import kotlin.math.max
  *
  * See also: https://semver.org/
  *
- * Use [SemVer.parse] to create an instance.
+ * Use [SemVer.tryParse] or [SemVer.parse] to create an instance.
  */
 sealed interface SemVer {
     class Parsed(val major: Int, val minor: Int, val patch: Int, val preRelease: String? = null) : SemVer, Comparable<Parsed> {
@@ -82,33 +82,42 @@ sealed interface SemVer {
 
     companion object {
         /**
-         * Attempt to parse a simple SemVer string.
+         * Attempt to parse a simple SemVer string, returning null otherwise.
          *
-         * Returns [Parsed] if the string is a valid SemVer, otherwise [Unparsed].
-         *
-         * Note that this is a very simple parser, and doesn't support pre-release suffixes.
+         * Note that this is a very simple parser, and doesn't support pre-release suffixes (outside of just returning
+         * it as a raw string).
          */
-        fun parse(text: String): SemVer {
-            val (versionPart, preReleasePart) = text.split('-', limit = 2).let { parts ->
+        fun tryParse(versionStr: String): Parsed? {
+            val (versionPart, preReleasePart) = versionStr.split('-', limit = 2).let { parts ->
                 // There may not be a pre-release suffix...
                 parts[0] to parts.getOrNull(1)
             }
 
             val versionParts = versionPart.split('.')
             if (versionParts.size != 3) {
-                return Unparsed(text)
+                return null
             }
             return try {
                 Parsed(
-                    major = versionParts[0].toIntOrNull() ?: return Unparsed(text),
-                    minor = versionParts[1].toIntOrNull() ?: return Unparsed(text),
-                    patch = versionParts[2].toIntOrNull() ?: return Unparsed(text),
+                    major = versionParts[0].toIntOrNull() ?: return null,
+                    minor = versionParts[1].toIntOrNull() ?: return null,
+                    patch = versionParts[2].toIntOrNull() ?: return null,
                     preRelease = preReleasePart,
                 )
-            } catch (ex: IllegalArgumentException) {
-                Unparsed(text)
+            } catch (_: IllegalArgumentException) {
+                null
             }
         }
+
+        /**
+         * Like [tryParse] but return an [Unparsed] result as a fallback.
+         */
+        fun tryParseOrUnparsed(versionStr: String): SemVer = tryParse(versionStr) ?: Unparsed(versionStr)
+
+        /**
+         * Like [tryParse] but for when you are confident that [versionStr] is a valid SemVer value.
+         */
+        fun parse(versionStr: String): Parsed = tryParse(versionStr) ?: throw IllegalArgumentException("Invalid semver value: $versionStr")
     }
 }
 
