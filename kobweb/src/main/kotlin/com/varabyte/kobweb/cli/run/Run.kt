@@ -78,6 +78,7 @@ fun handleRun(
     siteLayout: SiteLayout,
     useAnsi: Boolean,
     runInForeground: Boolean,
+    runOnce: Boolean,
     gradleArgsCommon: List<String>,
     gradleArgsStart: List<String>,
     gradleArgsStop: List<String>,
@@ -91,6 +92,7 @@ fun handleRun(
             siteLayout,
             useAnsi,
             runInForeground,
+            runOnce,
             kobwebExecutionEnvironment,
             gradleArgsCommon,
             gradleArgsStart,
@@ -104,6 +106,7 @@ private fun handleRun(
     siteLayout: SiteLayout,
     useAnsi: Boolean,
     runInForeground: Boolean,
+    runOnce: Boolean,
     kobwebExecutionEnvironment: KobwebExecutionEnvironment,
     gradleArgsCommon: List<String>,
     gradleArgsStart: List<String>,
@@ -253,7 +256,7 @@ private fun handleRun(
                     kobwebGradle.onStarting = ::informGradleStarting
                     val startServerProcess = try {
                         kobwebGradle.startServer(
-                            enableLiveReloading = (env == ServerEnvironment.DEV),
+                            enableLiveReloading = (env == ServerEnvironment.DEV && !runOnce),
                             siteLayout,
                             gradleArgsCommon + gradleArgsStart,
                         )
@@ -338,23 +341,28 @@ private fun handleRun(
                                 serverState = it
                                 runState = RunState.RUNNING
 
-                                CoroutineScope(Dispatchers.IO).launch {
-                                    val client = OkHttpClient()
-                                    val serverVersionRequest =
-                                        Request.Builder()
-                                            .url("${serverState.url}/api/kobweb-version")
-                                            .build()
+                                // Newer versions of Kobweb support toggling live reload mode dynamically. However,
+                                // we shouldn't expose this option to users who requested only running once, because in
+                                // that case, we'll never trigger a live reload from happening in the first place.
+                                if (!runOnce) {
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        val client = OkHttpClient()
+                                        val serverVersionRequest =
+                                            Request.Builder()
+                                                .url("${serverState.url}/api/kobweb-version")
+                                                .build()
 
-                                    client.newCall(serverVersionRequest).execute().use { response ->
-                                        if (response.isSuccessful) {
-                                            response.body?.string()?.trim()
-                                                ?.let { serverVersionStr ->
-                                                    SemVer.tryParse(serverVersionStr)
-                                                }?.let { serverVersion ->
-                                                    if (serverVersion >= KobwebServerFeatureVersions.toggleLiveReloading) {
-                                                        canToggleLiveReloading = true
+                                        client.newCall(serverVersionRequest).execute().use { response ->
+                                            if (response.isSuccessful) {
+                                                response.body?.string()?.trim()
+                                                    ?.let { serverVersionStr ->
+                                                        SemVer.tryParse(serverVersionStr)
+                                                    }?.let { serverVersion ->
+                                                        if (serverVersion >= KobwebServerFeatureVersions.toggleLiveReloading) {
+                                                            canToggleLiveReloading = true
+                                                        }
                                                     }
-                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -504,6 +512,7 @@ private fun handleRun(
             siteLayout,
             useAnsi,
             runInForeground,
+            runOnce,
             kobwebExecutionEnvironment,
             gradleArgsCommon,
             gradleArgsStart,

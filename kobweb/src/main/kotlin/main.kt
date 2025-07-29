@@ -237,6 +237,11 @@ fun main(args: Array<String>) {
             "--foreground",
             help = "Keep kobweb running in the foreground. This value can only be specified in --notty mode."
         ).flag(default = false)
+        val once by option(
+            "-o",
+            "--once",
+            help = "Run without engaging live-reloading. This value can only be specified when --env is set to dev."
+        ).flag(default = false)
         val layout by layout()
         val path by path()
         val gradleArgsCommon by gradleArgs()
@@ -248,7 +253,14 @@ fun main(args: Array<String>) {
             if (foreground && ttyMode != TeleTypeMode.DISABLED) {
                 throw object : UsageError(null) {
                     override fun formatMessage(localization: Localization, formatter: ParameterFormatter): String {
-                        return "The foreground flag is only valid when running in ${formatter.formatOption("--notty")} mode."
+                        return "The ${formatter.formatOption("--foreground")} flag is only valid when running in ${formatter.formatOption("--notty")} mode."
+                    }
+                }
+            }
+            if (once && env != ServerEnvironment.DEV) {
+                throw object : UsageError(null) {
+                    override fun formatMessage(localization: Localization, formatter: ParameterFormatter): String {
+                        return "The ${formatter.formatOption("--once")} flag is only valid when ${formatter.formatOption("--env")} is set to dev."
                     }
                 }
             }
@@ -258,6 +270,7 @@ fun main(args: Array<String>) {
                 layout,
                 ttyMode.shouldUseAnsi(),
                 foreground,
+                once,
                 gradleArgsCommon,
                 gradleArgsStart,
                 gradleArgsStop
