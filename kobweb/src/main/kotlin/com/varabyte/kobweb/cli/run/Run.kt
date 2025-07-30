@@ -197,7 +197,7 @@ private fun handleRun(
                                                 yellow {
                                                     text(if (liveReloadingPaused) "OFF" else "ON")
                                                 }
-                                                textLine("]")
+                                                text("]")
                                             }
                                         }
                                     }
