@@ -60,6 +60,8 @@ fun Session.reportUpdateAvailable(oldVersion: SemVer.Parsed, newVersion: SemVer.
                 green {
                     text(newVersion.toString())
                 }
+                textLine()
+                cyan(isBright = false) { text("https://github.com/varabyte/kobweb-cli/releases/tag/v${newVersion}") }
                 textLine(); textLine()
                 text("Please review ")
                 cyan(isBright = false) { text("https://github.com/varabyte/kobweb#update-the-kobweb-binary") }
