@@ -1,5 +1,6 @@
 package com.varabyte.kobweb.cli.common
 
+import com.varabyte.kobweb.cli.common.kotter.chooseFromList
 import com.varabyte.kobweb.cli.common.kotter.informError
 import com.varabyte.kobweb.cli.common.kotter.informInfo
 import com.varabyte.kobweb.cli.common.kotter.onYesNoChanged
@@ -15,8 +16,6 @@ import com.varabyte.kobweb.project.conf.KobwebConfFile
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.ServerState
 import com.varabyte.kobweb.server.api.ServerStateFile
-import com.varabyte.kotter.foundation.input.Keys
-import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.session
@@ -161,40 +160,10 @@ fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
 
                 candidate.takeIf { shouldUseNewLocation }
             } else {
-                var candidateIndex by liveVarOf(0)
-                var shouldUseNewLocation by liveVarOf(true)
-
-                section {
-                    textLine()
-                    textInfoPrefix()
-                    textLine("A Kobweb application was not found here, but multiple Kobweb applications were found in nested folders. Choose one or press Q to cancel.")
-                    textLine()
-                    candidates.forEachIndexed { index, candidate ->
-                        text(if (index == candidateIndex) '>' else ' ')
-                        text(' ')
-                        cyan { textLine(candidate.relativeToCurrentDirectoryOrBasePath().toString()) }
-                    }
-                    textLine()
-                }.runUntilSignal {
-                    onKeyPressed {
-                        when (key) {
-                            Keys.UP -> candidateIndex =
-                                (candidateIndex - 1).let { if (it < 0) candidates.size - 1 else it }
-
-                            Keys.DOWN -> candidateIndex = (candidateIndex + 1) % candidates.size
-                            Keys.HOME -> candidateIndex = 0
-                            Keys.END -> candidateIndex = candidates.size - 1
-                            // Q included because Kobweb users might be used to pressing it in other contexts
-                            Keys.ESC, Keys.Q, Keys.Q_UPPER -> {
-                                shouldUseNewLocation = false; signal()
-                            }
-
-                            Keys.ENTER -> signal()
-                        }
-                    }
-                }
-
-                candidates[candidateIndex].takeIf { shouldUseNewLocation }
+                chooseFromList(
+                    "A Kobweb application was not found here, but multiple Kobweb applications were found in nested folders.",
+                    candidates,
+                    itemToString = { it.relativeToCurrentDirectoryOrBasePath().toString() })
             }
         } else {
             null

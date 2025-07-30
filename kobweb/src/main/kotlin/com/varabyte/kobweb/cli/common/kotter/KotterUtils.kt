@@ -6,9 +6,11 @@ import com.varabyte.kobweb.cli.common.Validations
 import com.varabyte.kotter.foundation.anim.text
 import com.varabyte.kotter.foundation.anim.textAnimOf
 import com.varabyte.kotter.foundation.input.Completions
+import com.varabyte.kotter.foundation.input.Keys
 import com.varabyte.kotter.foundation.input.input
 import com.varabyte.kotter.foundation.input.onInputChanged
 import com.varabyte.kotter.foundation.input.onInputEntered
+import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.input.runUntilInputEntered
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.render.aside
@@ -228,6 +230,48 @@ fun Session.queryUser(
         }
     }
     return answer
+}
+
+fun <T> Session.chooseFromList(message: String, items: List<T>, itemToString: (T) -> String = { it.toString() }, produceInitialIndex: () -> Int = { 0 }, extra: ((T) -> String)? = null): T? {
+    var choiceIndex by liveVarOf(produceInitialIndex())
+    var canceled by liveVarOf(false)
+    fun selectedChoice() = items[choiceIndex].takeUnless { canceled }
+
+    section {
+        textLine()
+        textLine("$message Choose one or press Q to cancel.")
+        textLine()
+        items.forEachIndexed { index, candidate ->
+            text(if (index == choiceIndex) '>' else ' ')
+            text(' ')
+            cyan { textLine(itemToString(candidate)) }
+        }
+        textLine()
+        if (extra != null) {
+            yellow {
+                textLine("  " + extra(items[choiceIndex]))
+            }
+        }
+    }.runUntilSignal {
+        onKeyPressed {
+            when (key) {
+                Keys.UP -> choiceIndex =
+                    (choiceIndex - 1).let { if (it < 0) items.size - 1 else it }
+
+                Keys.DOWN -> choiceIndex = (choiceIndex + 1) % items.size
+                Keys.HOME -> choiceIndex = 0
+                Keys.END -> choiceIndex = items.size - 1
+                // Q included because Kobweb users might be used to pressing it in other contexts
+                Keys.ESC, Keys.Q, Keys.Q_UPPER -> {
+                    canceled = true; signal()
+                }
+
+                Keys.ENTER -> signal()
+            }
+        }
+    }
+
+    return selectedChoice()
 }
 
 /**

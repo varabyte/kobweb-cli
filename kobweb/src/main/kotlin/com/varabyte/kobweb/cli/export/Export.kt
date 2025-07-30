@@ -8,6 +8,7 @@ import com.varabyte.kobweb.cli.common.assertServerNotAlreadyRunning
 import com.varabyte.kobweb.cli.common.findKobwebExecutionEnvironment
 import com.varabyte.kobweb.cli.common.handleGradleOutput
 import com.varabyte.kobweb.cli.common.isServerAlreadyRunningFor
+import com.varabyte.kobweb.cli.common.kotter.chooseFromList
 import com.varabyte.kobweb.cli.common.kotter.handleConsoleOutput
 import com.varabyte.kobweb.cli.common.kotter.informGradleStarting
 import com.varabyte.kobweb.cli.common.kotter.newline
@@ -27,6 +28,7 @@ import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.foundation.text.yellow
+import com.varabyte.kotter.runtime.Session
 import java.io.File
 
 private enum class ExportState {
@@ -38,9 +40,23 @@ private enum class ExportState {
     INTERRUPTED,
 }
 
+private fun Session.queryUserForSiteLayout(): SiteLayout? {
+    return chooseFromList(
+        "You must specify what kind of export this is.",
+        SiteLayout.entries.toList(),
+        itemToString = { it.name.lowercase().capitalize() },
+        produceInitialIndex = { SiteLayout.entries.indexOf(SiteLayout.STATIC) }
+    ) { selectedLayout ->
+        when (selectedLayout) {
+            SiteLayout.FULLSTACK -> "Use `--layout fullstack` for a project that provides both frontend (js) and backend (jvm) code."
+            SiteLayout.STATIC -> "Use `--layout static` for a project that only provides frontend (js) code. This is most projects."
+        }
+    }
+}
+
 fun handleExport(
     projectDir: File,
-    siteLayout: SiteLayout,
+    siteLayout: SiteLayout?,
     useAnsi: Boolean,
     gradleArgsCommon: List<String>,
     gradleArgsExport: List<String>,
@@ -64,7 +80,7 @@ fun handleExport(
 }
 
 private fun handleExport(
-    siteLayout: SiteLayout,
+    siteLayout: SiteLayout?,
     useAnsi: Boolean,
     kobwebExecutionEnvironment: KobwebExecutionEnvironment,
     gradleArgsCommon: List<String>,
@@ -78,6 +94,8 @@ private fun handleExport(
 
     if (useAnsi && !trySession {
             if (isServerAlreadyRunningFor(kobwebApplication, kobwebGradle)) return@trySession
+
+            val siteLayout = siteLayout ?: queryUserForSiteLayout() ?: return@trySession
 
             newline() // Put space between user prompt and eventual first line of Gradle output
 
@@ -176,7 +194,8 @@ private fun handleExport(
         kobwebApplication.assertServerNotAlreadyRunning()
 
         val exportFailed = kobwebGradle
-            .export(siteLayout, gradleArgsCommon + gradleArgsExport)
+            // default to fullstack for legacy reasons
+            .export(siteLayout ?: SiteLayout.FULLSTACK, gradleArgsCommon + gradleArgsExport)
             .waitForAndCheckForException() != null
 
         kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).waitFor()

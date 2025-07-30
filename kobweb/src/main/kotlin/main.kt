@@ -47,7 +47,6 @@ private fun ParameterHolder.layout() = option(
     help = "Specify the organizational layout of the site files."
 )
     .enum<SiteLayout>()
-    .default(SiteLayout.FULLSTACK)
 
 enum class TeleTypeMode {
     ENABLED,
@@ -242,7 +241,7 @@ fun main(args: Array<String>) {
             "--once",
             help = "Run without engaging live-reloading. This value can only be specified when --env is set to dev."
         ).flag(default = false)
-        val layout by layout()
+        val layout by layout().default(SiteLayout.FULLSTACK)
         val path by path()
         val gradleArgsCommon by gradleArgs()
         val gradleArgsStart by gradleArgs("start")
