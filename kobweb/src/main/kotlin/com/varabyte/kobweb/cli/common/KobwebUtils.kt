@@ -192,6 +192,8 @@ fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
 
                     text("Running: ")
                     cyan { text("kobweb ${argsCopy.joinToString(" ")}") }
+
+                    Globals[ProgramArgsKey] = argsCopy.toTypedArray()
                 }
             }
         }

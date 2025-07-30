@@ -2,8 +2,10 @@ package com.varabyte.kobweb.cli.export
 
 import com.github.ajalt.clikt.core.CliktError
 import com.varabyte.kobweb.cli.common.Anims
+import com.varabyte.kobweb.cli.common.Globals
 import com.varabyte.kobweb.cli.common.GradleAlertBundle
 import com.varabyte.kobweb.cli.common.KobwebExecutionEnvironment
+import com.varabyte.kobweb.cli.common.ProgramArgsKey
 import com.varabyte.kobweb.cli.common.assertServerNotAlreadyRunning
 import com.varabyte.kobweb.cli.common.findKobwebExecutionEnvironment
 import com.varabyte.kobweb.cli.common.handleGradleOutput
@@ -11,6 +13,7 @@ import com.varabyte.kobweb.cli.common.isServerAlreadyRunningFor
 import com.varabyte.kobweb.cli.common.kotter.chooseFromList
 import com.varabyte.kobweb.cli.common.kotter.handleConsoleOutput
 import com.varabyte.kobweb.cli.common.kotter.informGradleStarting
+import com.varabyte.kobweb.cli.common.kotter.informInfo
 import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
@@ -40,16 +43,29 @@ private enum class ExportState {
     INTERRUPTED,
 }
 
+// Query the export layout if the user didn't pass it in explicitly using `--layout $layout`
 private fun Session.queryUserForSiteLayout(): SiteLayout? {
     return chooseFromList(
-        "You must specify what kind of export this is.",
+        "Specify what kind of export layout you want to use.",
         SiteLayout.entries.toList(),
-        itemToString = { it.name.lowercase().capitalize() },
+        itemToString = { @Suppress("DEPRECATION") it.name.lowercase().capitalize() },
         produceInitialIndex = { SiteLayout.entries.indexOf(SiteLayout.STATIC) }
     ) { selectedLayout ->
         when (selectedLayout) {
-            SiteLayout.FULLSTACK -> "Use `--layout fullstack` for a project that provides both frontend (js) and backend (jvm) code."
-            SiteLayout.STATIC -> "Use `--layout static` for a project that only provides frontend (js) code. This is most projects."
+            SiteLayout.FULLSTACK -> "Use for a project that provides both frontend (js) and backend (jvm) code."
+            SiteLayout.STATIC -> "Use for a project that only provides only frontend (js) code (no backend) and whose output is compatible with static site hosting providers."
+        }
+    }?.also { chosenLayout ->
+        newline()
+        informInfo {
+            val argsCopy = Globals.getValue(ProgramArgsKey).toMutableList()
+            // Add layout args immediately after command (i.e. "export")
+            argsCopy.addAll(1, listOf("--layout", chosenLayout.name.lowercase()))
+
+            text("Running: ")
+            cyan { text("kobweb ${argsCopy.joinToString(" ")}") }
+
+            Globals[ProgramArgsKey] = argsCopy.toTypedArray()
         }
     }
 }
