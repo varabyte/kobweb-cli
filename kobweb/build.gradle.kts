@@ -35,7 +35,16 @@ dependencies {
 }
 
 application {
-    applicationDefaultJvmArgs = listOf("-Dkobweb.version=${version}")
+    applicationDefaultJvmArgs = listOf(
+        "-Dkobweb.version=${version}",
+        // JDK24 started reporting warnings for libraries that use protected native methods, at least one (System.load)
+        // which Kotter uses (via jline/jansi). Since Java fat jars built by Kotlin don't really use Java's module
+        // system, we unfortunately have to whitelist all unnamed modules. We also enable the
+        // IgnoreUnrecognizedVMOptions flag to avoid causing users running older versions of the JVM to crash.
+        // See also: https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/doc-files/RestrictedMethods.html
+        "-XX:+IgnoreUnrecognizedVMOptions",
+        "--enable-native-access=ALL-UNNAMED",
+    )
     mainClass.set("MainKt")
 }
 
