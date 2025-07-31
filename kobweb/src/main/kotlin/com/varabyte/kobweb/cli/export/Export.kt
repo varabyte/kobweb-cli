@@ -144,8 +144,8 @@ private fun handleExport(
                                         append(" -p ")
                                         append(relativePath)
                                     }
+                                    append(" --layout ${siteLayout.name.lowercase()}")
                                     append(" --env prod")
-                                    if (siteLayout.isStatic) append(" --layout static")
                                 }
                             )
                         }
