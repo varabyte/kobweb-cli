@@ -140,9 +140,8 @@ private fun handleExport(
                             text(
                                 buildString {
                                     append("kobweb run")
-                                    kobwebApplication.path.relativeToCurrentDirectory()?.let { relativePath ->
-                                        append(" -p ")
-                                        append(relativePath)
+                                    kobwebApplication.path.relativeToCurrentDirectory()?.takeUnless { it.toString().isBlank() }?.let { relativePath ->
+                                        append(" -p $relativePath")
                                     }
                                     append(" --layout ${siteLayout.name.lowercase()}")
                                     append(" --env prod")
