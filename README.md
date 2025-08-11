@@ -75,6 +75,9 @@ other sibling repositories as a side effect.
 
 ## Informing users about the release
 
-* Update the badge version at the top of the main Kobweb README
+* Find/replace all the badge versions throughout various Kobweb docs
+  * Kobweb: README
+  * Kobweb site: GettingKobweb.md and GitHubWorkflowExport
+  * (Optional) Bitspittle.dev: CloudDeploy.md
 * Update the version file: https://github.com/varabyte/data/blob/main/kobweb/cli-version.txt
-* Create an announcement in all relevant Kobweb communities (Discord, Slack, etc.)
+* (Optional) Make an announcement in relevant Kobweb communities (Discord, Slack, Bluesky, etc.)
