@@ -16,7 +16,6 @@ import com.varabyte.kobweb.cli.common.kotter.textInfo
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warn
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
-import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
 import com.varabyte.kobweb.cli.common.version.KobwebServerFeatureVersions
 import com.varabyte.kobweb.cli.common.version.SemVer
 import com.varabyte.kobweb.cli.common.waitForAndCheckForException
@@ -128,10 +127,6 @@ private fun handleRun(
             val conf = findKobwebConfIn(kobwebFolder) ?: return@trySession
 
             newline() // Put space between user prompt and eventual first line of Gradle output
-
-            if (siteLayout.isStatic) {
-                showStaticSiteLayoutWarning()
-            }
 
             val envName = when (env) {
                 ServerEnvironment.DEV -> "development"

@@ -278,11 +278,3 @@ fun Session.findKobwebConfIn(kobwebFolder: KobwebFolder): KobwebConf? {
 }
 
 fun Session.findKobwebConfFor(kobwebApplication: KobwebApplication) = findKobwebConfIn(kobwebApplication.kobwebFolder)
-
-fun Session.showStaticSiteLayoutWarning() {
-    section {
-        // TODO(#123): Link to URL doc link when available.
-        yellow { textLine("Static site layout chosen. Some Kobweb features like server api routes / api streams are unavailable in this configuration.") }
-        textLine()
-    }.run()
-}

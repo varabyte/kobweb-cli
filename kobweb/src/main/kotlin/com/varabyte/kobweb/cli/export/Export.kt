@@ -18,7 +18,6 @@ import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
 import com.varabyte.kobweb.cli.common.relativeToCurrentDirectory
-import com.varabyte.kobweb.cli.common.showStaticSiteLayoutWarning
 import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.SiteLayout
@@ -114,10 +113,6 @@ private fun handleExport(
             val siteLayout = siteLayout ?: queryUserForSiteLayout() ?: return@trySession
 
             newline() // Put space between user prompt and eventual first line of Gradle output
-
-            if (siteLayout.isStatic) {
-                showStaticSiteLayoutWarning()
-            }
 
             var exportState by liveVarOf(ExportState.EXPORTING)
             val gradleAlertBundle = GradleAlertBundle(this)
