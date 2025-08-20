@@ -154,8 +154,8 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
     }
 
     fun export(siteLayout: SiteLayout, extraGradleArgs: List<String> = emptyList()): Handle {
-        // Even if we are exporting a non-Kobweb layout, we still want to start up a dev server using a Kobweb layout so
-        // it looks for the source files in the right place.
+        // Even if we are exporting a non-fullstack layout, we still want to start up a dev server using a fullstack
+        // layout so it looks for the source files in the right place.
         return gradlew(
             "kobwebExport",
             "-PkobwebReuseServer=false",
