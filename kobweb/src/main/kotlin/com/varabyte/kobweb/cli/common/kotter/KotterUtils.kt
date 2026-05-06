@@ -255,18 +255,18 @@ fun <T> Session.chooseFromList(message: String, items: List<T>, itemToString: (T
     }.runUntilSignal {
         onKeyPressed {
             when (key) {
-                Keys.UP -> choiceIndex =
+                Keys.Up -> choiceIndex =
                     (choiceIndex - 1).let { if (it < 0) items.size - 1 else it }
 
-                Keys.DOWN -> choiceIndex = (choiceIndex + 1) % items.size
-                Keys.HOME -> choiceIndex = 0
-                Keys.END -> choiceIndex = items.size - 1
+                Keys.Down -> choiceIndex = (choiceIndex + 1) % items.size
+                Keys.Home -> choiceIndex = 0
+                Keys.End -> choiceIndex = items.size - 1
                 // Q included because Kobweb users might be used to pressing it in other contexts
-                Keys.ESC, Keys.Q, Keys.Q_UPPER -> {
+                Keys.Escape, Keys.Q -> {
                     canceled = true; signal()
                 }
 
-                Keys.ENTER -> signal()
+                Keys.Enter -> signal()
             }
         }
     }

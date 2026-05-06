@@ -122,17 +122,17 @@ fun handleCreate(repo: String, branch: String?, templateName: String?) = session
                     }
                 }
                     .onFinishing { finished = true }
-                    .runUntilKeyPressed(Keys.ENTER) {
+                    .runUntilKeyPressed(Keys.Enter) {
                         onKeyPressed {
                             when (key) {
-                                Keys.UP -> selectedIndex =
+                                Keys.Up -> selectedIndex =
                                     if (selectedIndex == 0) templateRoots.lastIndex else selectedIndex - 1
 
-                                Keys.DOWN -> selectedIndex =
+                                Keys.Down -> selectedIndex =
                                     if (selectedIndex == templateRoots.lastIndex) 0 else selectedIndex + 1
 
-                                Keys.HOME -> selectedIndex = 0
-                                Keys.END -> selectedIndex = templateRoots.lastIndex
+                                Keys.Home -> selectedIndex = 0
+                                Keys.End -> selectedIndex = templateRoots.lastIndex
                             }
                         }
                     }
@@ -212,7 +212,7 @@ fun handleCreate(repo: String, branch: String?, templateName: String?) = session
             textLine("Created $projectFolder at ${dstPath.absolutePathString()}")
         }
         textLine()
-        bordered(BorderCharacters.CURVED, paddingLeftRight = 1) {
+        bordered(BorderCharacters.Curved, paddingLeftRight = 1) {
             text("Consider downloading "); magenta(isBright = true) { textLine("IntelliJ IDEA Community Edition") }
             text("using "); blue(isBright = true) { textLine("https://www.jetbrains.com/toolbox-app/") }
         }

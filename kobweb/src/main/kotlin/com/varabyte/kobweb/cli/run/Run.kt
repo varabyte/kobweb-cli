@@ -281,8 +281,7 @@ private fun handleRun(
                     onKeyPressed {
                         var keyHandled = false
                         if (
-                            (runState in listOf(RunState.STARTING, RunState.RUNNING) && key in listOf(
-                                Keys.EOF, Keys.Q, Keys.Q_UPPER))
+                            (runState in listOf(RunState.STARTING, RunState.RUNNING) && key in listOf(Keys.Eof, Keys.Q))
                             || (runState == RunState.RUNNING && key == Keys.R)
                         ) {
                             if (runState == RunState.STARTING) {
@@ -315,10 +314,10 @@ private fun handleRun(
                         }
 
                         if (!keyHandled && runState == RunState.RUNNING) {
-                            if (key == Keys.H || key == Keys.H_UPPER) {
+                            if (key == Keys.H) {
                                 keyHandled = true
                                 showHelp = !showHelp
-                            } else if (canToggleLiveReloading && (key == Keys.P || key == Keys.P_UPPER)) {
+                            } else if (canToggleLiveReloading && (key == Keys.P)) {
                                 keyHandled = true
                                 liveReloadingPaused = !liveReloadingPaused
                                 ServerRequestsFile(kobwebApplication.kobwebFolder).enqueueRequest(

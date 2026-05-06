@@ -50,7 +50,7 @@ fun Session.reportUpdateAvailable(oldVersion: SemVer.Parsed, newVersion: SemVer.
     section {
         textLine()
         yellow {
-            bordered(borderCharacters = BorderCharacters.CURVED, paddingLeftRight = 2, paddingTopBottom = 1) {
+            bordered(borderCharacters = BorderCharacters.Curved, paddingLeftRight = 2, paddingTopBottom = 1) {
                 white()
                 text("Update available: ")
                 black(isBright = true) {

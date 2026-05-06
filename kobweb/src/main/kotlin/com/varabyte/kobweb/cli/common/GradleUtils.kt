@@ -268,32 +268,32 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
     fun handleKey(key: Key): Boolean {
         var handled = true
         when (key) {
-            Keys.HOME -> {
+            Keys.Home -> {
                 startIndex = 0
                 stuckToEnd = false
             }
 
-            Keys.END -> {
+            Keys.End -> {
                 startIndex = maxIndex
                 stuckToEnd = true
             }
 
-            Keys.UP -> {
+            Keys.Up -> {
                 startIndex = (startIndex - 1).coerceAtLeast(0)
                 stuckToEnd = false
             }
 
-            Keys.PAGE_UP -> {
+            Keys.PageUp -> {
                 startIndex = (startIndex - pageSize).coerceAtLeast(0)
                 stuckToEnd = false
             }
 
-            Keys.DOWN -> {
+            Keys.Down -> {
                 startIndex = (startIndex + 1).coerceAtMost(maxIndex)
                 stuckToEnd = (startIndex == maxIndex)
             }
 
-            Keys.PAGE_DOWN -> {
+            Keys.PageDown -> {
                 startIndex = (startIndex + pageSize).coerceAtMost(maxIndex)
                 stuckToEnd = (startIndex == maxIndex)
             }

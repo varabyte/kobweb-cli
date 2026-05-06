@@ -50,19 +50,19 @@ fun RunScope.onYesNoChanged(valueOnCancel: Boolean? = false, block: YesNoScope.(
 
     onKeyPressed {
         val yesNoScope = when (key) {
-            Keys.LEFT, Keys.RIGHT -> YesNoScope(!isYes())
-            Keys.HOME -> YesNoScope(true)
-            Keys.END -> YesNoScope(false)
+            Keys.Left, Keys.Right -> YesNoScope(!isYes())
+            Keys.Home -> YesNoScope(true)
+            Keys.End -> YesNoScope(false)
 
-            Keys.Y, Keys.Y_UPPER -> YesNoScope(true, shouldAccept = true)
-            Keys.N, Keys.N_UPPER -> YesNoScope(false, shouldAccept = true)
+            Keys.Y -> YesNoScope(true, shouldAccept = true)
+            Keys.N -> YesNoScope(false, shouldAccept = true)
 
             // Q included because Kobweb users might be used to pressing it in other contexts
-            Keys.ESC, Keys.Q, Keys.Q_UPPER -> {
+            Keys.Escape, Keys.Q -> {
                 if (valueOnCancel != null) YesNoScope(valueOnCancel, shouldAccept = true) else null
             }
 
-            Keys.ENTER -> YesNoScope(isYes(), shouldAccept = true)
+            Keys.Enter -> YesNoScope(isYes(), shouldAccept = true)
 
             else -> null
         }
