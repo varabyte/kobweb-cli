@@ -348,10 +348,9 @@ private fun handleRun(
 
                                         client.newCall(serverVersionRequest).execute().use { response ->
                                             if (response.isSuccessful) {
-                                                response.body?.string()?.trim()
-                                                    ?.let { serverVersionStr ->
-                                                        SemVer.tryParse(serverVersionStr)
-                                                    }?.let { serverVersion ->
+                                                response.body.string().trim()
+                                                    .let { serverVersionStr -> SemVer.tryParse(serverVersionStr) }
+                                                    ?.let { serverVersion ->
                                                         if (serverVersion >= KobwebServerFeatureVersions.toggleLiveReloading) {
                                                             canToggleLiveReloading = true
                                                         }

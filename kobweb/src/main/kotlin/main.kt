@@ -129,8 +129,8 @@ fun main(args: Array<String>) {
 
                 client.newCall(latestVersionRequest).execute().use { response ->
                     if (response.isSuccessful) {
-                        response.body?.string()?.trim()
-                            ?.let { latestVersionStr -> SemVer.tryParse(latestVersionStr) }
+                        response.body.string().trim()
+                            .let { latestVersionStr -> SemVer.tryParse(latestVersionStr) }
                             ?.let { latestVersion ->
                                 if (kobwebCliVersion < latestVersion) {
                                     newVersionAvailable = latestVersion
