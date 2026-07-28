@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import com.github.jengelman.gradle.plugins.shadow.transformers.ApacheLicenseResourceTransformer
 import org.jreleaser.model.Active
 
 plugins {
@@ -81,6 +83,19 @@ distributions {
 // Avoid ambiguity / add clarity in generated artifacts
 tasks.jar {
     archiveFileName.set("kobweb-cli.jar")
+}
+
+// An INCLUDE strategy is required to allow the Shadow Plugin to receive files that Gradle thinks are duplicates but
+// that it will then handle processing / merging them.
+// See also: https://gradleup.com/shadow/configuration/merging/#handling-duplicates-strategy
+tasks.withType<ShadowJar>().configureEach {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    mergeServiceFiles() // Prevents duplicate META-INF jline service warning
+
+    // Avoid licenses from different projects crashing into each other. Let's be nice and make sure they end up in the
+    // final product.
+    // https://maven.apache.org/plugins/maven-shade-plugin/examples/resource-transformers.html#ApacheLicenseResourceTransformer
+    transform(ApacheLicenseResourceTransformer::class.java)
 }
 
 // These values are specified in ~/.gradle/gradle.properties; otherwise sorry, no jreleasing for you :P
