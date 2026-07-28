@@ -359,19 +359,19 @@ private fun handleRun(
                                         }
                                     }
                                 }
-                            } ?: run { delay(300) }
+                            } ?: run { delay(300.milliseconds) }
                         }
                     }
 
                     CoroutineScope(Dispatchers.IO).launch {
                         while (runState != RunState.RUNNING) {
-                            delay(1000)
+                            delay(1000.milliseconds)
                         }
 
                         val kobwebConf = KobwebConfFile(kobwebFolder)
                         val timestamp = Files.getLastModifiedTime(kobwebConf.path)
                         while (runState == RunState.RUNNING) {
-                            delay(1000)
+                            delay(1000.milliseconds)
                             if (Files.getLastModifiedTime(kobwebConf.path) != timestamp) {
                                 kobwebConfChanged = true
                                 break
@@ -475,7 +475,7 @@ private fun handleRun(
         val serverStateFile = ServerStateFile(kobwebApplication.kobwebFolder)
         runBlocking {
             while (serverStateFile.content?.isRunning() == false) {
-                delay(20) // Low delay because startup should happen fairly quickly
+                delay(20.milliseconds) // Low delay because startup should happen fairly quickly
             }
         }
 
@@ -493,7 +493,7 @@ private fun handleRun(
 
             runBlocking {
                 while (serverStateFile.content?.isRunning() == true) {
-                    delay(300)
+                    delay(300.milliseconds)
                 }
             }
         }
