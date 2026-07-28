@@ -132,7 +132,7 @@ if (githubUsername != null && githubToken != null) {
             // Set the Java version explicitly, even though in theory this value should be coming from our root
             // build.gradle file, but it does not seem to when I run "jreleaserPublish" from the command line.
             // See also: https://github.com/jreleaser/jreleaser/issues/785
-            java {
+            languages.java {
                 version.set(JavaVersion.VERSION_11.toString())
             }
         }
