@@ -23,6 +23,8 @@ import com.varabyte.kobweb.cli.help.optionNameColor
 import com.varabyte.kobweb.cli.help.sectionTitleColor
 import com.varabyte.kobweb.cli.stop.handleStop
 import com.varabyte.kobweb.common.navigation.BasePath
+import com.varabyte.kobweb.project.KobwebFolder
+import com.varabyte.kobweb.project.conf.KobwebConf
 import com.varabyte.kobweb.project.conf.KobwebConfFile
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.ServerRequest
@@ -38,9 +40,11 @@ import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.liveVarOf
 import com.varabyte.kotter.foundation.runUntilSignal
 import com.varabyte.kotter.foundation.shutdown.addShutdownHook
+import com.varabyte.kotter.foundation.text.black
 import com.varabyte.kotter.foundation.text.bold
 import com.varabyte.kotter.foundation.text.cyan
 import com.varabyte.kotter.foundation.text.green
+import com.varabyte.kotter.foundation.text.link
 import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
@@ -57,6 +61,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.absolute
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.exists
+import kotlin.io.path.relativeTo
+import kotlin.io.path.relativeToOrSelf
 import kotlin.time.Duration.Companion.milliseconds
 
 private enum class RunState {
@@ -70,6 +80,20 @@ private enum class RunState {
 }
 
 private val ServerState.url: String get() = "http://localhost:$port"
+
+private class ServerLogsPath(kobwebFolder: KobwebFolder, conf: KobwebConf) {
+    private val workingDir = Path.of(".").absolute().normalize()
+    private val siteDir = kobwebFolder.path.parent
+
+    private val logRelPath = Path.of(conf.server.logging.logRoot, "${conf.server.logging.logFileBaseName}.log")
+    private val logAbsPath = siteDir.resolve(logRelPath).normalize()
+
+    fun exists() = logAbsPath.exists()
+
+    fun renderInto(scope: RenderScope) {
+        scope.link(logAbsPath.toUri(), logAbsPath.relativeToOrSelf(workingDir).toString())
+    }
+}
 
 fun handleRun(
     env: ServerEnvironment,
@@ -137,6 +161,8 @@ private fun handleRun(
             val gradleAlertBundle = GradleAlertBundle(this)
             var userRequestedCancelWhileBuilding = false
 
+            val serverLogsPath = ServerLogsPath(kobwebFolder, conf)
+
             run {
                 val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
                 var runState by liveVarOf(RunState.STARTING)
@@ -167,8 +193,17 @@ private fun handleRun(
                                     cyan { text("${serverState.url}$basePath") }
                                 }
                                 textLine(" (PID = ${serverState.pid})")
+
+                                if (serverLogsPath.exists()) {
+                                    black(isBright = true) {
+                                        text("  Logs: ")
+                                        serverLogsPath.renderInto(this)
+                                        textLine()
+                                    }
+                                }
                                 if (liveReloadingPaused) {
                                     yellow {
+                                        textLine()
                                         textLine("Live reloading is now PAUSED. Press P to unpause.")
                                     }
                                 }
