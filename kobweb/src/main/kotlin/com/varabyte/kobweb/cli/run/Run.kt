@@ -221,6 +221,9 @@ private fun handleRun(
                                     val commands = buildMap<String, RenderScope.() -> Unit> {
                                         put("h|help") { text("Toggle this help view") }
                                         put("q|quit") { text("Shutdown the server") }
+                                        if (runState == RunState.RUNNING) {
+                                            put("r|restart") { text("Restart the server (to pick up conf changes)") }
+                                        }
                                         if (canToggleLiveReloading) {
                                             put("p|pause") {
                                                 text("Toggle live reloading [")
