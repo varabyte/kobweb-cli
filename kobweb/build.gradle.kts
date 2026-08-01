@@ -96,6 +96,10 @@ tasks.withType<ShadowJar>().configureEach {
     // final product.
     // https://maven.apache.org/plugins/maven-shade-plugin/examples/resource-transformers.html#ApacheLicenseResourceTransformer
     transform(ApacheLicenseResourceTransformer::class.java)
+
+    // We don't care about OSGi and multi-release JAR manifests
+    exclude("META-INF/OSGI-INF/**")
+    exclude("META-INF/versions/**/MANIFEST.MF")
 }
 
 // These values are specified in ~/.gradle/gradle.properties; otherwise sorry, no jreleasing for you :P
