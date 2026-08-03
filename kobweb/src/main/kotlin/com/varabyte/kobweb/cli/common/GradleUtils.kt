@@ -364,7 +364,7 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
         renderScope.apply {
             if (!hasFirstTaskRun) {
                 yellow {
-                    text("Please wait as Gradle is currently processing your project.")
+                    text("Syncing project...")
                 }
                 lastProgressEvent?.let {
                     black(isBright = true) {
