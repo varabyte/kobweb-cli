@@ -72,7 +72,7 @@ fun Session.handleStop(
     }.run {
         kobwebGradle.onStarting = ::informGradleStarting
         val stopServerProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).apply {
-            onProgress = { gradleAlertBundle.handleAlert(it) }
+            onAlert = { gradleAlertBundle.handleAlert(it) }
         }
         stopServerProcess.lineHandler = { line, isError ->
             handleGradleOutput(line, isError) { alert -> gradleAlertBundle.handleAlert(alert) }

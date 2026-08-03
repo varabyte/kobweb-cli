@@ -24,6 +24,7 @@ import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.ProjectConnection
 import org.gradle.tooling.ResultHandler
 import org.gradle.tooling.events.OperationType
+import org.gradle.tooling.events.task.TaskStartEvent
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector
 import java.io.ByteArrayOutputStream
 import java.io.Closeable
@@ -83,11 +84,11 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
         }
 
         /**
-         * An optional listener for a progress event.
+         * An optional listener that is triggered when a Gradle alert fires.
          *
-         * Users may want to listen to this and feed the instance into a [GradleAlertBundle] so it can respond to them.
+         * Users may want to listen to this and feed the alert into [GradleAlertBundle] so it can respond to it.
          */
-        var onProgress: (progress: GradleAlert.Progress) -> Unit = { }
+        var onAlert: (alert: GradleAlert) -> Unit = { }
 
         internal val onCompleted: MutableList<(failure: Exception?) -> Unit> = mutableListOf()
 
@@ -146,11 +147,17 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             .forTasks(task)
             .withArguments(finalArgs)
             .withCancellationToken(cancelToken.token())
+            // Progress listener for events useful to surface during startup
             .addProgressListener({ event ->
                 event.descriptor.displayName.takeIf { it.isNotBlank() }?.let { desc ->
-                    handle.onProgress.invoke(GradleAlert.Progress(desc))
+                    handle.onAlert.invoke(GradleAlert.Progress(desc))
                 }
             }, *startupProgressEvents.toTypedArray())
+            // Progress listener for tasks
+            .addProgressListener({ event ->
+                if (event !is TaskStartEvent) return@addProgressListener
+                handle.onAlert.invoke(GradleAlert.Task(event.descriptor.taskPath))
+            }, OperationType.TASK)
             .run(object : ResultHandler<Void> {
                 private fun handleFinished() {
                     handle.onCompleted.clear()
@@ -223,7 +230,6 @@ private const val GRADLE_ERROR_PREFIX = "e: "
 private const val GRADLE_WARNING_PREFIX = "w: "
 private const val GRADLE_WHAT_WENT_WRONG = "* What went wrong:"
 private const val GRADLE_TRY_PREFIX = "* Try:"
-private const val GRADLE_TASK_PREFIX = "> Task :"
 
 sealed interface GradleAlert {
     class Warning(val line: String) : GradleAlert
@@ -235,6 +241,9 @@ sealed interface GradleAlert {
 
 private val WhatWentWrongKey = RunScope.Lifecycle.createKey<StringBuilder>()
 
+/**
+ * Given a line to render, render it appropriately and also generate [GradleAlert] events from Gradle output.
+ */
 fun RunScope.handleGradleOutput(line: String, isError: Boolean, onGradleEvent: (GradleAlert) -> Unit) {
     handleConsoleOutput(line, isError)
 
@@ -242,8 +251,6 @@ fun RunScope.handleGradleOutput(line: String, isError: Boolean, onGradleEvent: (
         onGradleEvent(GradleAlert.Error(line.removePrefix(GRADLE_ERROR_PREFIX)))
     } else if (line.startsWith(GRADLE_WARNING_PREFIX)) {
         onGradleEvent(GradleAlert.Warning(line.removePrefix(GRADLE_WARNING_PREFIX)))
-    } else if (line.startsWith(GRADLE_TASK_PREFIX)) {
-        onGradleEvent(GradleAlert.Task(line.removePrefix(GRADLE_TASK_PREFIX).substringBefore(' ')))
     } else if (line == "Change detected, executing build...") {
         onGradleEvent(GradleAlert.BuildRestarted)
     }
