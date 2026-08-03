@@ -121,10 +121,14 @@ private fun handleExport(
             val ellipsis = textAnimOf(Anims.ELLIPSIS)
             var exception by liveVarOf<Exception?>(null) // Set if ExportState.INTERRUPTED
             section {
-                textLine() // Add space between this block and Gradle text which will appear above
-                gradleAlertBundle.renderInto(this)
+                // Add space between this block and Gradle text which will appear above
+                textLine()
                 when (exportState) {
-                    ExportState.EXPORTING -> textLine("Exporting$ellipsis")
+                    ExportState.EXPORTING -> {
+                        textLine("Exporting$ellipsis")
+                        textLine()
+                        gradleAlertBundle.renderInto(this)
+                    }
                     ExportState.FINISHING -> textLine("Finishing up$ellipsis")
                     ExportState.FINISHED -> {
                         textLine("Export finished successfully.")

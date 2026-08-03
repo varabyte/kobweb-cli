@@ -52,11 +52,12 @@ fun Session.handleStop(
     val gradleAlertBundle = GradleAlertBundle(this)
     section {
         textLine() // Add text line between this block and Gradle output above
-        gradleAlertBundle.renderInto(this)
 
         when (stopState) {
             StopState.STOPPING -> {
                 textLine("Stopping a Kobweb server$ellipsisAnim")
+                textLine()
+                gradleAlertBundle.renderInto(this)
             }
 
             StopState.STOPPED -> {

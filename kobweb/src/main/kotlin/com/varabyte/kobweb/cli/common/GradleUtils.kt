@@ -363,22 +363,23 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
     fun renderInto(renderScope: RenderScope) {
         renderScope.apply {
             if (!hasFirstTaskRun) {
+                val syncMessage = "Syncing project"
                 yellow {
-                    text("Syncing project...")
+                    text(syncMessage)
                 }
-                lastProgressEvent?.let {
-                    black(isBright = true) {
-                        textLine()
-                        val session = renderScope.section.session
-                        val descTruncated = session.textMetrics.truncateToWidth(
+                black(isBright = true) {
+                    val session = renderScope.section.session
+                    val descTruncated = lastProgressEvent?.let {
+                        session.textMetrics.truncateToWidth(
                             it.desc,
-                            session.terminalSize.width - 2, // Account for parens
+                            // -3 accounts for parentheses and space
+                            session.terminalSize.width - syncMessage.length - 3,
                             ellipsis = EllipsisPresets.SYMBOL
                         )
-                        text("($descTruncated)")
-                    }
+                    } ?: "Initializing"
+                    text(" ($descTruncated)")
+                    textLine()
                 }
-                textLine()
 
                 textLine()
             }
