@@ -299,6 +299,7 @@ private fun handleRun(
                             gradleArgsCommon + gradleArgsStart,
                         ).apply {
                             onFailure { interruptWithException(it) }
+                            onProgress = { gradleAlertBundle.handleAlert(it) }
                         }
                     } catch (ex: Exception) {
                         interruptWithException(ex)

@@ -2,11 +2,12 @@ package com.varabyte.kobweb.cli.stop
 
 import com.github.ajalt.clikt.core.CliktError
 import com.varabyte.kobweb.cli.common.Anims
+import com.varabyte.kobweb.cli.common.GradleAlertBundle
 import com.varabyte.kobweb.cli.common.KobwebExecutionEnvironment
 import com.varabyte.kobweb.cli.common.KobwebGradle
 import com.varabyte.kobweb.cli.common.findKobwebExecutionEnvironment
+import com.varabyte.kobweb.cli.common.handleGradleOutput
 import com.varabyte.kobweb.cli.common.isServerAlreadyRunning
-import com.varabyte.kobweb.cli.common.kotter.handleConsoleOutput
 import com.varabyte.kobweb.cli.common.kotter.informGradleStarting
 import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.trySession
@@ -48,8 +49,10 @@ fun Session.handleStop(
     val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
     var stopState by liveVarOf(StopState.STOPPING)
     var exception by liveVarOf<Exception?>(null) // Set if StopState.INTERRUPTED
+    val gradleAlertBundle = GradleAlertBundle(this)
     section {
         textLine() // Add text line between this block and Gradle output above
+        gradleAlertBundle.renderInto(this)
 
         when (stopState) {
             StopState.STOPPING -> {
@@ -68,8 +71,13 @@ fun Session.handleStop(
         }
     }.run {
         kobwebGradle.onStarting = ::informGradleStarting
-        val stopServerProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop)
-        stopServerProcess.lineHandler = ::handleConsoleOutput
+        val stopServerProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).apply {
+            onProgress = { gradleAlertBundle.handleAlert(it) }
+        }
+        stopServerProcess.lineHandler = { line, isError ->
+            handleGradleOutput(line, isError) { alert -> gradleAlertBundle.handleAlert(alert) }
+        }
+
         try {
             stopServerProcess.waitForCompletion()
         } catch (ex: Exception) {

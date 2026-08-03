@@ -7,6 +7,7 @@ import com.varabyte.kotter.foundation.collections.liveListOf
 import com.varabyte.kotter.foundation.input.Key
 import com.varabyte.kotter.foundation.input.Keys
 import com.varabyte.kotter.foundation.liveVarOf
+import com.varabyte.kotter.foundation.text.black
 import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
@@ -15,11 +16,14 @@ import com.varabyte.kotter.runtime.RunScope
 import com.varabyte.kotter.runtime.Session
 import com.varabyte.kotter.runtime.concurrent.createKey
 import com.varabyte.kotter.runtime.render.RenderScope
+import com.varabyte.kotter.runtime.terminal.EllipsisPresets
+import com.varabyte.kotter.runtime.terminal.truncateToWidth
 import org.gradle.tooling.CancellationTokenSource
 import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.GradleConnector
 import org.gradle.tooling.ProjectConnection
 import org.gradle.tooling.ResultHandler
+import org.gradle.tooling.events.OperationType
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector
 import java.io.ByteArrayOutputStream
 import java.io.Closeable
@@ -78,6 +82,13 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             }
         }
 
+        /**
+         * An optional listener for a progress event.
+         *
+         * Users may want to listen to this and feed the instance into a [GradleAlertBundle] so it can respond to them.
+         */
+        var onProgress: (progress: GradleAlert.Progress) -> Unit = { }
+
         internal val onCompleted: MutableList<(failure: Exception?) -> Unit> = mutableListOf()
 
         internal inner class HandleOutputStream(private val isError: Boolean) : OutputStream() {
@@ -123,6 +134,11 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
         val cancelToken = GradleConnector.newCancellationTokenSource()
         val handle = Handle(cancelToken)
 
+        // Add a progress listener specifically with the purpose of picking up events that will happen frequently during
+        // the startup lifecycle, so we can show users something is happening (besides just "please wait, trust us")
+        // before tasks start getting executed.
+        val startupProgressEvents = listOf(OperationType.GENERIC, OperationType.PROJECT_CONFIGURATION)
+
         onStarting(OnStartingEvent(task, finalArgs))
         projectConnection.newBuild()
             .setStandardOutput(handle.HandleOutputStream(isError = false))
@@ -130,6 +146,11 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             .forTasks(task)
             .withArguments(finalArgs)
             .withCancellationToken(cancelToken.token())
+            .addProgressListener({ event ->
+                event.descriptor.displayName.takeIf { it.isNotBlank() }?.let { desc ->
+                    handle.onProgress.invoke(GradleAlert.Progress(desc))
+                }
+            }, *startupProgressEvents.toTypedArray())
             .run(object : ResultHandler<Void> {
                 private fun handleFinished() {
                     handle.onCompleted.clear()
@@ -208,6 +229,7 @@ sealed interface GradleAlert {
     class Warning(val line: String) : GradleAlert
     class Error(val line: String) : GradleAlert
     class Task(val task: String) : GradleAlert
+    class Progress(val desc: String) : GradleAlert
     object BuildRestarted : GradleAlert
 }
 
@@ -255,6 +277,7 @@ fun RunScope.handleGradleOutput(line: String, isError: Boolean, onGradleEvent: (
 class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
     private val warnings = session.liveListOf<GradleAlert.Warning>()
     private val errors = session.liveListOf<GradleAlert.Error>()
+    private var lastProgressEvent by session.liveVarOf<GradleAlert.Progress?>(null)
     var hasFirstTaskRun by session.liveVarOf(false)
         private set
     private var startIndex by session.liveVarOf(0)
@@ -268,6 +291,10 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
                 stuckToEnd = false
                 warnings.clear()
                 errors.clear()
+            }
+
+            is GradleAlert.Progress -> {
+                lastProgressEvent = alert
             }
 
             is GradleAlert.Task -> {
@@ -329,7 +356,23 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
     fun renderInto(renderScope: RenderScope) {
         renderScope.apply {
             if (!hasFirstTaskRun) {
-                yellow { textLine("Output may seem to pause for a while if Kobweb needs to download / resolve dependencies.") }
+                yellow {
+                    text("Please wait as Gradle is currently processing your project.")
+                }
+                lastProgressEvent?.let {
+                    black(isBright = true) {
+                        textLine()
+                        val session = renderScope.section.session
+                        val descTruncated = session.textMetrics.truncateToWidth(
+                            it.desc,
+                            session.terminalSize.width - 2, // Account for parens
+                            ellipsis = EllipsisPresets.SYMBOL
+                        )
+                        text("($descTruncated)")
+                    }
+                }
+                textLine()
+
                 textLine()
             }
         }

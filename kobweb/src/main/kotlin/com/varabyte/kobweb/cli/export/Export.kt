@@ -161,7 +161,9 @@ private fun handleExport(
                     exportState = ExportState.INTERRUPTED
                 }
                 val exportProcess = try {
-                    kobwebGradle.export(siteLayout, gradleArgsCommon + gradleArgsExport)
+                    kobwebGradle.export(siteLayout, gradleArgsCommon + gradleArgsExport).apply {
+                        onProgress = { gradleAlertBundle.handleAlert(it) }
+                    }
                 } catch (ex: Exception) {
                     interruptWithException(ex)
                     return@run
