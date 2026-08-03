@@ -118,7 +118,6 @@ private fun handleExport(
             var exportState by liveVarOf(ExportState.EXPORTING)
             val gradleAlertBundle = GradleAlertBundle(this)
 
-            var cancelReason by liveVarOf("")
             val ellipsis = textAnimOf(Anims.ELLIPSIS)
             var exception by liveVarOf<Exception?>(null) // Set if ExportState.INTERRUPTED
             section {
@@ -146,8 +145,8 @@ private fun handleExport(
                         }
                         textLine(" to preview your site.")
                     }
-                    ExportState.CANCELLING -> yellow { textLine("Cancelling export: $cancelReason$ellipsis") }
-                    ExportState.CANCELLED -> yellow { textLine("Export cancelled: $cancelReason") }
+                    ExportState.CANCELLING -> yellow { textLine("Cancelling export$ellipsis") }
+                    ExportState.CANCELLED -> yellow { textLine("Export cancelled by user.") }
                     ExportState.INTERRUPTED -> {
                         red { textLine("Export interrupted by exception. Message(s):") }
                         textLine()
@@ -173,7 +172,6 @@ private fun handleExport(
 
                 onKeyPressed {
                     if (exportState == ExportState.EXPORTING && key == Keys.Q) {
-                        cancelReason = "User requested cancellation"
                         exportProcess.cancel()
                         exportState = ExportState.CANCELLING
                     } else {
@@ -183,17 +181,13 @@ private fun handleExport(
 
                 try {
                     exportProcess.waitForCompletion()
-                    if (exportState != ExportState.CANCELLING) {
-                        cancelReason =
-                            "Server failed to build. Please check Gradle output and fix the errors before retrying."
-                        exportState = ExportState.CANCELLING
-                    } else if (exportState == ExportState.EXPORTING) {
-                        exportState = ExportState.FINISHING
-                    }
+                    exportState = ExportState.FINISHING
                 } catch (ex: Exception) {
-                    interruptWithException(ex)
+                    if (exportState != ExportState.CANCELLING) {
+                        interruptWithException(ex)
+                        return@run
+                    }
                 }
-                if (exportState == ExportState.INTERRUPTED) return@run
 
                 check(exportState in listOf(ExportState.FINISHING, ExportState.CANCELLING))
 
