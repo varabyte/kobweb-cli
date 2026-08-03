@@ -11,16 +11,18 @@ import com.varabyte.kobweb.cli.common.kotter.informGradleStarting
 import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
-import com.varabyte.kobweb.cli.common.waitForAndCheckForException
+import com.varabyte.kobweb.cli.common.toMessageLinesString
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kotter.foundation.anim.textAnimOf
 import com.varabyte.kotter.foundation.liveVarOf
+import com.varabyte.kotter.foundation.text.red
 import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.runtime.Session
 import java.io.File
 
 private enum class StopState {
     STOPPING,
+    INTERRUPTED,
     STOPPED,
 }
 
@@ -45,6 +47,7 @@ fun Session.handleStop(
 ) {
     val ellipsisAnim = textAnimOf(Anims.ELLIPSIS)
     var stopState by liveVarOf(StopState.STOPPING)
+    var exception by liveVarOf<Exception?>(null) // Set if StopState.INTERRUPTED
     section {
         textLine() // Add text line between this block and Gradle output above
 
@@ -56,12 +59,24 @@ fun Session.handleStop(
             StopState.STOPPED -> {
                 textLine("Server was stopped.")
             }
+
+            StopState.INTERRUPTED -> {
+                red { textLine("Request to stop the server was interrupted by exception. Message(s):") }
+                textLine()
+                textLine(exception!!.toMessageLinesString())
+            }
         }
     }.run {
         kobwebGradle.onStarting = ::informGradleStarting
         val stopServerProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop)
         stopServerProcess.lineHandler = ::handleConsoleOutput
-        stopServerProcess.waitFor()
+        try {
+            stopServerProcess.waitForCompletion()
+        } catch (ex: Exception) {
+            exception = ex
+            stopState = StopState.INTERRUPTED
+            return@run
+        }
         stopState = StopState.STOPPED
     }
 }
@@ -97,12 +112,12 @@ private fun handleStop(
             return
         }
 
-        val stopFailed = kobwebGradle
-            .stopServer(gradleArgsCommon + gradleArgsStop)
-            .waitForAndCheckForException() != null
-
-        if (stopFailed) {
-            throw CliktError("Failed to stop a Kobweb server. Please check Gradle output and resolve any errors before retrying.")
+        try {
+            kobwebGradle
+                .stopServer(gradleArgsCommon + gradleArgsStop)
+                .waitForCompletion()
+        } catch (ex: Exception) {
+            throw CliktError("\nFailed to stop a Kobweb server.\n\n${ex.toMessageLinesString()}")
         }
     }
 }

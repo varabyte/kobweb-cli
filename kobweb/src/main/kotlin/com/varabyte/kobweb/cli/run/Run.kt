@@ -16,9 +16,10 @@ import com.varabyte.kobweb.cli.common.kotter.textInfo
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warn
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
+import com.varabyte.kobweb.cli.common.toMessageLinesString
+import com.varabyte.kobweb.cli.common.tryWaitForCompletion
 import com.varabyte.kobweb.cli.common.version.KobwebServerFeatureVersions
 import com.varabyte.kobweb.cli.common.version.SemVer
-import com.varabyte.kobweb.cli.common.waitForAndCheckForException
 import com.varabyte.kobweb.cli.help.optionNameColor
 import com.varabyte.kobweb.cli.help.sectionTitleColor
 import com.varabyte.kobweb.cli.stop.handleStop
@@ -63,20 +64,18 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.absolute
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
-import kotlin.io.path.relativeTo
 import kotlin.io.path.relativeToOrSelf
 import kotlin.time.Duration.Companion.milliseconds
 
 private enum class RunState {
     STARTING,
+    INTERRUPTED,
     RUNNING,
     STOPPING,
     STOPPED,
     CANCELLING,
     CANCELLED,
-    INTERRUPTED,
 }
 
 private val ServerState.url: String get() = "http://localhost:$port"
@@ -280,22 +279,29 @@ private fun handleRun(
                         }
 
                         RunState.INTERRUPTED -> {
-                            red { textLine("Interrupted by exception:") }
+                            red { textLine("Startup interrupted by exception. Message(s):") }
                             textLine()
-                            textLine(exception!!.stackTraceToString())
+                            textLine(exception!!.toMessageLinesString())
                         }
                     }
                 }.runUntilSignal {
                     kobwebGradle.onStarting = ::informGradleStarting
+
+                    fun interruptWithException(ex: Exception) {
+                        exception = ex
+                        runState = RunState.INTERRUPTED
+                        signal()
+                    }
                     val startServerProcess = try {
                         kobwebGradle.startServer(
                             enableLiveReloading = (env == ServerEnvironment.DEV && !runOnce),
                             siteLayout,
                             gradleArgsCommon + gradleArgsStart,
-                        )
+                        ).apply {
+                            onFailure { interruptWithException(it) }
+                        }
                     } catch (ex: Exception) {
-                        exception = ex
-                        runState = RunState.INTERRUPTED
+                        interruptWithException(ex)
                         return@runUntilSignal
                     }
                     startServerProcess.lineHandler = { line, isError ->
@@ -327,7 +333,7 @@ private fun handleRun(
                                 runState = RunState.STOPPING
                                 CoroutineScope(Dispatchers.IO).launch {
                                     startServerProcess.cancel()
-                                    startServerProcess.waitFor()
+                                    startServerProcess.tryWaitForCompletion() // Wait for cancel to finish propagating
                                     cancelReason = "User quit before server could confirm it had started up."
                                     runState = RunState.CANCELLED
                                     userRequestedCancelWhileBuilding = true
@@ -339,11 +345,11 @@ private fun handleRun(
                                 if (key == Keys.R) { restartRequested = true }
                                 CoroutineScope(Dispatchers.IO).launch {
                                     startServerProcess.cancel()
-                                    startServerProcess.waitFor()
+                                    startServerProcess.tryWaitForCompletion()// Wait for cancel to finish propagating
 
                                     val stopServerProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop)
                                     stopServerProcess.lineHandler = ::handleConsoleOutput
-                                    stopServerProcess.waitFor()
+                                    stopServerProcess.waitForCompletion()
 
                                     runState = RunState.STOPPED
                                     signal()
@@ -503,11 +509,13 @@ private fun handleRun(
 
         // If we're non-interactive, it means we just want to start the Kobweb server and exit without waiting for
         // for any additional changes. (This is essentially used when run in a web server environment)
-        val runFailed = kobwebGradle
-            .startServer(enableLiveReloading = false, siteLayout, gradleArgsCommon + gradleArgsStart)
-            .waitForAndCheckForException() != null
-        if (runFailed) {
-            throw CliktError("Failed to start a Kobweb server. Please check Gradle output and resolve any errors before retrying.")
+
+        try {
+            kobwebGradle
+                .startServer(enableLiveReloading = false, siteLayout, gradleArgsCommon + gradleArgsStart)
+                .waitForCompletion()
+        } catch (ex: Exception) {
+            throw CliktError("\nFailed to start a Kobweb server.\n\n${ex.toMessageLinesString()}")
         }
 
         val serverStateFile = ServerStateFile(kobwebApplication.kobwebFolder)

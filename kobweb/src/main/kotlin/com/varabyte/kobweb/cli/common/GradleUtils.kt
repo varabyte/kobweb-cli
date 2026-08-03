@@ -78,7 +78,7 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             }
         }
 
-        var onCompleted: (failure: Exception?) -> Unit = { }
+        internal val onCompleted: MutableList<(failure: Exception?) -> Unit> = mutableListOf()
 
         internal inner class HandleOutputStream(private val isError: Boolean) : OutputStream() {
             private val delegateStream = ByteArrayOutputStream()
@@ -99,8 +99,22 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             cancellationSource.cancel()
         }
 
-        fun waitFor() {
+        /**
+         * Wait for the current Gradle comment to complete.
+         *
+         * This will throw if an error occurred while the command was running.
+         */
+        fun waitForCompletion() {
+            var failure: Exception? = null
+            val handler: (Exception?) -> Unit = { failure = it }
+            onCompleted += handler
             latch.await()
+            onCompleted -= handler
+            failure?.let { throw it }
+        }
+
+        fun onFailure(handler: (Exception) -> Unit) {
+            onCompleted += { failure -> failure?.let(handler) }
         }
     }
 
@@ -118,17 +132,18 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
             .withCancellationToken(cancelToken.token())
             .run(object : ResultHandler<Void> {
                 private fun handleFinished() {
+                    handle.onCompleted.clear()
                     handles.remove(handle)
                     handle.latch.countDown()
                 }
 
                 override fun onComplete(result: Void?) {
-                    handle.onCompleted.invoke(null)
+                    handle.onCompleted.forEach { it.invoke(null) }
                     handleFinished()
                 }
 
                 override fun onFailure(failure: GradleConnectionException) {
-                    handle.onCompleted.invoke(failure)
+                    handle.onCompleted.forEach { it.invoke(failure) }
                     handleFinished()
                 }
             })
@@ -168,11 +183,19 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
     }
 }
 
-fun KobwebGradle.Handle.waitForAndCheckForException(): Exception? {
-    var failure: Exception? = null
-    onCompleted = { failure = it }
-    waitFor()
-    return failure
+/**
+ * Like [waitForCompletion] but when you don't care about the exception being thrown.
+ *
+ * This message will swallow any exception thrown and instead return a boolean indicating whether the task completed
+ * successfully.
+ */
+fun KobwebGradle.Handle.tryWaitForCompletion(): Boolean {
+    return try {
+        waitForCompletion()
+        true
+    } catch (_: Exception) {
+        false
+    }
 }
 
 private const val GRADLE_ERROR_PREFIX = "e: "

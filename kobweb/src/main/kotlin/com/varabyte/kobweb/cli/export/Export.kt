@@ -18,7 +18,8 @@ import com.varabyte.kobweb.cli.common.kotter.newline
 import com.varabyte.kobweb.cli.common.kotter.trySession
 import com.varabyte.kobweb.cli.common.kotter.warnFallingBackToPlainText
 import com.varabyte.kobweb.cli.common.relativeToCurrentDirectory
-import com.varabyte.kobweb.cli.common.waitForAndCheckForException
+import com.varabyte.kobweb.cli.common.toMessageLinesString
+import com.varabyte.kobweb.cli.common.tryWaitForCompletion
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.SiteLayout
 import com.varabyte.kotter.foundation.anim.textAnimOf
@@ -35,11 +36,11 @@ import java.io.File
 
 private enum class ExportState {
     EXPORTING,
+    INTERRUPTED,
     FINISHING,
     FINISHED,
     CANCELLING,
     CANCELLED,
-    INTERRUPTED,
 }
 
 // Query the export layout if the user didn't pass it in explicitly using `--layout $layout`
@@ -148,19 +149,22 @@ private fun handleExport(
                     ExportState.CANCELLING -> yellow { textLine("Cancelling export: $cancelReason$ellipsis") }
                     ExportState.CANCELLED -> yellow { textLine("Export cancelled: $cancelReason") }
                     ExportState.INTERRUPTED -> {
-                        red { textLine("Interrupted by exception:") }
+                        red { textLine("Export interrupted by exception. Message(s):") }
                         textLine()
-                        textLine(exception!!.stackTraceToString())
+                        textLine(exception!!.toMessageLinesString())
                     }
                 }
             }.run {
                 kobwebGradle.onStarting = ::informGradleStarting
 
+                fun interruptWithException(ex: Exception) {
+                    exception = ex
+                    exportState = ExportState.INTERRUPTED
+                }
                 val exportProcess = try {
                     kobwebGradle.export(siteLayout, gradleArgsCommon + gradleArgsExport)
                 } catch (ex: Exception) {
-                    exception = ex
-                    exportState = ExportState.INTERRUPTED
+                    interruptWithException(ex)
                     return@run
                 }
                 exportProcess.lineHandler = { line, isError ->
@@ -177,21 +181,25 @@ private fun handleExport(
                     }
                 }
 
-                if (exportProcess.waitForAndCheckForException() != null) {
+                try {
+                    exportProcess.waitForCompletion()
                     if (exportState != ExportState.CANCELLING) {
                         cancelReason =
                             "Server failed to build. Please check Gradle output and fix the errors before retrying."
                         exportState = ExportState.CANCELLING
+                    } else if (exportState == ExportState.EXPORTING) {
+                        exportState = ExportState.FINISHING
                     }
+                } catch (ex: Exception) {
+                    interruptWithException(ex)
                 }
-                if (exportState == ExportState.EXPORTING) {
-                    exportState = ExportState.FINISHING
-                }
+                if (exportState == ExportState.INTERRUPTED) return@run
+
                 check(exportState in listOf(ExportState.FINISHING, ExportState.CANCELLING))
 
                 val stopProcess = kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop)
                 stopProcess.lineHandler = ::handleConsoleOutput
-                stopProcess.waitFor()
+                stopProcess.tryWaitForCompletion()
 
                 exportState = if (exportState == ExportState.FINISHING) ExportState.FINISHED else ExportState.CANCELLED
             }
@@ -203,13 +211,15 @@ private fun handleExport(
     if (runInPlainMode) {
         kobwebApplication.assertServerNotAlreadyRunning()
 
-        val exportFailed = kobwebGradle
-            // default to fullstack for legacy reasons
-            .export(siteLayout ?: SiteLayout.FULLSTACK, gradleArgsCommon + gradleArgsExport)
-            .waitForAndCheckForException() != null
+        try {
+            kobwebGradle
+                // default to fullstack for legacy reasons
+                .export(siteLayout ?: SiteLayout.FULLSTACK, gradleArgsCommon + gradleArgsExport)
+                .waitForCompletion()
+        } catch (ex: Exception) {
+            throw CliktError("\nFailed to export a Kobweb site.\n\n${ex.toMessageLinesString()}")
+        }
 
-        kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).waitFor()
-
-        if (exportFailed) throw CliktError("Export failed. Please check Gradle output and resolve any errors before retrying.")
+        kobwebGradle.stopServer(gradleArgsCommon + gradleArgsStop).waitForCompletion()
     }
 }
