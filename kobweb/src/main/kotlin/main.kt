@@ -234,7 +234,7 @@ fun main(args: Array<String>) {
         val foreground by option(
             "-f",
             "--foreground",
-            help = "Keep kobweb running in the foreground. This value can only be specified in --notty mode."
+            help = "Keep kobweb running in the foreground. Useful to prevent the process from exiting early on CIs for example. This value can only be specified in --notty mode."
         ).flag(default = false)
         val once by option(
             "-o",
