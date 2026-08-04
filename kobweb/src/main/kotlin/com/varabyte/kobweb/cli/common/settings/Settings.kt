@@ -20,7 +20,7 @@ import kotlin.time.Instant
  * Data values exposed to users that are used to define values globally useful to a Kobweb project.
  */
 @Serializable
-class Settings(
+data class Settings(
     val upgradeCheck: UpgradeCheck = UpgradeCheck()
 ) {
     @Serializable
@@ -42,7 +42,13 @@ class Settings(
 
 }
 
+private fun Settings.deepCopy(): Settings {
+    return Yaml.nonStrictDefault.decodeFromString(Yaml.nonStrictDefault.encodeToString(this))
+}
+
 object SettingsFile {
+    private val lock = Any()
+
     private val EMPTY_BYTE_ARRAY = ByteArray(0)
 
     private val configFile = run {
@@ -51,16 +57,37 @@ object SettingsFile {
     }
 
     /**
-     * Read out a new instance of a [Settings] object, as loading from disk.
+     * Read out a new instance of a [Settings] object from disk.
+     *
+     * If modified, changes will automatically be saved back to disk.
+     *
+     * This method is synchronized, so only one thread can access settings at a time. Therefore, the [block] callback
+     * ideally should not live too long.
+     */
+    fun <R> useSettings(block: Settings.() -> R): R {
+        val result: R
+        synchronized(lock) {
+            val settings = readSettings()
+            val settingsCopy = settings.deepCopy()
+            result = settings.block()
+
+            if (settings != settingsCopy) {
+                writeSettings(settings)
+            }
+        }
+        return result
+    }
+
+    /**
+     * Read out a new, mutable instance of a [Settings] object, loaded from disk.
      *
      * This will be an empty settings object if the file doesn't exist yet.
      *
-     * You are encouraged to make modifications to your settings object, but you will need to call [writeSettings] to
-     * save those changes to disk.
+     * Changes made to the settings object must be written back to disk via [writeSettings] or they will be lost.
      *
      * Note that it is not safe to have two different threads read settings and then write settings at the same time.
      */
-    fun readSettings(): Settings {
+    private fun readSettings(): Settings {
         return (configFile.content ?: EMPTY_BYTE_ARRAY).let { bytes ->
             try {
                 Yaml.nonStrictDefault.decodeFromString<Settings>(bytes.decodeToString())
@@ -73,13 +100,13 @@ object SettingsFile {
     /**
      * Commit a new instance of [Settings] to disk.
      *
-     * Although we are pretty sure this will always succeed, this method protects against exceptions, as we'd rather a
-     * user with a system that can't save settings for some reason (strict permissions? Unknown OS?) simply fail to
-     * write to settings rather than throw an exception.
+     * Although we are pretty sure this will always succeed, this method protects against exceptions. We'd rather a user
+     * with a system that can't save settings for some reason (strict permissions? Unknown OS?) fail to write to
+     * settings rather than throw an exception.
      *
      * See also: [readSettings].
      */
-    fun writeSettings(settings: Settings): Boolean {
+    private fun writeSettings(settings: Settings): Boolean {
         return try {
             val filePath = configFile.path
             if (!filePath.parent.exists()) {

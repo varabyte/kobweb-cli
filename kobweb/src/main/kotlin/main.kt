@@ -121,8 +121,8 @@ fun main(args: Array<String>) {
             // (which is the only time we'd see a snapshot version here).
             if (kobwebCliVersion.isSnapshot) return
 
-            val settings = SettingsFile.readSettings()
-            if (!settings.upgradeCheck.shouldNotifyUser()) return
+            val shouldNotifyUser = SettingsFile.useSettings { upgradeCheck.shouldNotifyUser() }
+            if (!shouldNotifyUser) return
 
             CoroutineScope(Dispatchers.IO).launch {
                 val client = OkHttpClient()
@@ -139,8 +139,6 @@ fun main(args: Array<String>) {
                                 if (kobwebCliVersion < latestVersion) {
                                     newVersionAvailable = latestVersion
                                 }
-
-                                SettingsFile.writeSettings(settings)
                             }
                     }
                 }
