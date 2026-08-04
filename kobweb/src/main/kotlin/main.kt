@@ -14,6 +14,7 @@ import com.github.ajalt.clikt.parameters.groups.single
 import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.enum
 import com.github.ajalt.clikt.parameters.types.file
@@ -87,9 +88,7 @@ private fun ParameterHolder.gradleArgs(suffix: String? = null) = option(
     } else {
         "Arguments that will be passed to the Gradle call associated with the \"$suffix\" phase specifically."
     }
-)
-    .convert { args -> args.split(' ').filter { it.isNotBlank() } }
-    .default(emptyList(), defaultForHelp = "none")
+).multiple()
 
 open class NoOpCliktCommand : CoreCliktCommand() {
     override fun run() {}
