@@ -33,7 +33,7 @@ dependencies {
 
     // For Gradle Tooling API (used for starting up / communicating with a gradle daemon)
     implementation("org.gradle:gradle-tooling-api:${gradle.gradleVersion}")
-    runtimeOnly("org.slf4j:slf4j-nop:2.0.6") // Needed by gradle tooling
+    runtimeOnly("org.slf4j:slf4j-nop:2.0.18") // Needed by gradle tooling
 }
 
 application {
