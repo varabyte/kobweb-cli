@@ -25,6 +25,7 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(libs.clikt.core)
+    implementation(libs.directories)
     implementation(libs.kotlinx.coroutines)
     implementation(libs.kotter)
     implementation(libs.freemarker)

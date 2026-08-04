@@ -21,6 +21,7 @@ import com.varabyte.kobweb.cli.common.DEFAULT_REPO
 import com.varabyte.kobweb.cli.common.Globals
 import com.varabyte.kobweb.cli.common.ProgramArgsKey
 import com.varabyte.kobweb.cli.common.kotter.trySession
+import com.varabyte.kobweb.cli.common.settings.SettingsFile
 import com.varabyte.kobweb.cli.common.version.SemVer
 import com.varabyte.kobweb.cli.common.version.isSnapshot
 import com.varabyte.kobweb.cli.common.version.kobwebCliVersion
@@ -120,6 +121,9 @@ fun main(args: Array<String>) {
             // (which is the only time we'd see a snapshot version here).
             if (kobwebCliVersion.isSnapshot) return
 
+            val settings = SettingsFile.readSettings()
+            if (!settings.upgradeCheck.shouldNotifyUser()) return
+
             CoroutineScope(Dispatchers.IO).launch {
                 val client = OkHttpClient()
                 val latestVersionRequest =
@@ -135,6 +139,8 @@ fun main(args: Array<String>) {
                                 if (kobwebCliVersion < latestVersion) {
                                     newVersionAvailable = latestVersion
                                 }
+
+                                SettingsFile.writeSettings(settings)
                             }
                     }
                 }
