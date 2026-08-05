@@ -7,6 +7,7 @@ import dev.dirs.ProjectDirectories
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import org.jetbrains.annotations.ApiStatus
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
@@ -23,20 +24,26 @@ import kotlin.time.Instant
 data class Settings(
     val upgradeCheck: UpgradeCheck = UpgradeCheck()
 ) {
+    /**
+     * Settings relevant to an occasional "Is there a new version available?" check.
+     */
     @Serializable
+    @ApiStatus.AvailableSince("0.9.22")
     data class UpgradeCheck(
-        var lastSuccessfulCheck: Instant = Instant.fromEpochMilliseconds(0),
-        val notifyFrequency: Duration = 1.days,
+        /** A recording of the last system clock time that we checked for an upgrade. */
+        var lastChecked: Instant = Instant.fromEpochMilliseconds(0),
+        /** How often to check. An interval of 1 day means we only ever check at most once a day. */
+        val interval: Duration = 1.days,
     ) {
         /**
          * Check if enough time has passed that we should show an "upgrade available" notification to the user.
          *
-         * If this method returns true then [lastSuccessfulCheck] will be updated as a side effect.
+         * If this method returns `true` then [lastChecked] will be updated as a side effect.
          */
         fun shouldNotifyUser(): Boolean {
             val now = Clock.System.now()
-            return (now - lastSuccessfulCheck > notifyFrequency)
-                .also { shouldNotify -> if (shouldNotify) lastSuccessfulCheck = now }
+            return (now - lastChecked > interval)
+                .also { shouldNotify -> if (shouldNotify) lastChecked = now }
         }
     }
 
