@@ -109,7 +109,7 @@ fun RenderScope.textInfoPrefix() {
 
 // Note: Newlines in text will create multiple "!" lines
 fun RenderScope.textInfo(message: String) {
-    message.split("\n").forEach {line ->
+    message.split("\n").forEach { line ->
         textInfoPrefix()
         textLine(line)
     }
@@ -232,46 +232,83 @@ fun Session.queryUser(
     return answer
 }
 
-fun <T> Session.chooseFromList(message: String, items: List<T>, itemToString: (T) -> String = { it.toString() }, produceInitialIndex: () -> Int = { 0 }, extra: ((T) -> String)? = null): T? {
+/**
+ * Choose a choice from a list of choices.
+ *
+ * This class supports arbitrary typed lists. Its return value is an item from the list, but nullable, as potentially
+ * the choice was canceled. If [allowCancelling] is false, then the return value will always be non-null.
+ *
+ * @param addGapAfterPrompt If we should add space after the prompt and before the list of choices.
+ */
+fun <T> Session.chooseFromList(query: String, choices: List<T>, note: String? = null, addGapAfterPrompt: Boolean = true, choiceToString: (T) -> String = { it.toString() }, produceInitialIndex: () -> Int = { 0 }, allowCancelling: Boolean = true, extra: ((T) -> String)? = null): T? {
+    check(choices.size >= 2) { "Must provide at least two choices" }
+
     var choiceIndex by liveVarOf(produceInitialIndex())
     var canceled by liveVarOf(false)
-    fun selectedChoice() = items[choiceIndex].takeUnless { canceled }
 
     section {
-        textLine()
-        textLine("$message Choose one or press Q to cancel.")
-        textLine()
-        items.forEachIndexed { index, candidate ->
+        textQuestionPrefix()
+        bold {
+            textLine(buildString {
+                append(query)
+                if (allowCancelling) {
+                    append(" Choose one or press Q to cancel.")
+                }
+            })
+        }
+        note?.let { textInfo(it) }
+
+        if (addGapAfterPrompt) textLine()
+        choices.forEachIndexed { index, choice ->
             text(if (index == choiceIndex) '>' else ' ')
             text(' ')
-            cyan { textLine(itemToString(candidate)) }
+            cyan { textLine(choiceToString(choice)) }
         }
-        textLine()
         if (extra != null) {
+            textLine()
             yellow {
-                textLine("  " + extra(items[choiceIndex]))
+                textLine("  " + extra(choices[choiceIndex]))
             }
         }
+        textLine()
     }.runUntilSignal {
         onKeyPressed {
             when (key) {
                 Keys.Up -> choiceIndex =
-                    (choiceIndex - 1).let { if (it < 0) items.size - 1 else it }
+                    (choiceIndex - 1).let { if (it < 0) choices.lastIndex else it }
 
-                Keys.Down -> choiceIndex = (choiceIndex + 1) % items.size
+                Keys.Down -> choiceIndex = (choiceIndex + 1) % choices.size
                 Keys.Home -> choiceIndex = 0
-                Keys.End -> choiceIndex = items.size - 1
-                // Q included because Kobweb users might be used to pressing it in other contexts
-                Keys.Escape, Keys.Q -> {
-                    canceled = true; signal()
-                }
-
+                Keys.End -> choiceIndex = choices.lastIndex
                 Keys.Enter -> signal()
+                Keys.Escape, Keys.Q -> {
+                    if (allowCancelling) {
+                        canceled = true
+                        signal()
+                    }
+                }
             }
         }
     }
 
-    return selectedChoice()
+    return choices[choiceIndex].takeUnless { canceled }
+}
+
+fun Session.queryUser(
+    query: String,
+    note: String?,
+    choices: List<String>,
+    defaultChoice: Int,
+): String {
+    return chooseFromList(
+        query,
+        choices,
+        note,
+        addGapAfterPrompt = false,
+        choiceToString = { it },
+        produceInitialIndex = { defaultChoice },
+        allowCancelling = false
+    )!! // Guaranteed non-null because cancelling not allowed
 }
 
 /**

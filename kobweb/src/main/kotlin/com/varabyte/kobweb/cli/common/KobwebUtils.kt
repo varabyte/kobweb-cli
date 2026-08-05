@@ -163,7 +163,7 @@ fun Session.findKobwebApplication(basePath: Path): KobwebApplication? {
                 chooseFromList(
                     "A Kobweb application was not found here, but multiple Kobweb applications were found in nested folders.",
                     candidates,
-                    itemToString = { it.relativeToCurrentDirectoryOrBasePath().toString() })
+                    choiceToString = { it.relativeToCurrentDirectoryOrBasePath().toString() })
             }
         } else {
             null

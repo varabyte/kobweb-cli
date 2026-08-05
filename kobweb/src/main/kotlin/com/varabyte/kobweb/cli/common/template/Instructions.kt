@@ -3,6 +3,7 @@ package com.varabyte.kobweb.cli.common.template
 import com.varabyte.kobweb.cli.create.freemarker.FreemarkerState
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.jetbrains.annotations.ApiStatus
 
 /**
  * Disable directory dot operations, e.g. "test/../../../../system"
@@ -31,6 +32,13 @@ sealed class Instruction(
     class Group(
         val instructions: List<Instruction>
     ) : Instruction()
+
+    /**
+     * Insert a blank line, which can be useful occasionally for formatting.
+     */
+    @Serializable
+    @SerialName("BlankLine")
+    class BlankLine : Instruction()
 
     /**
      * Inform the user about something.
@@ -66,6 +74,31 @@ sealed class Instruction(
         val note: String? = null,
         val default: String? = null,
         val validation: String? = null,
+        val transform: String? = null,
+    ) : Instruction()
+
+    /**
+     * Prompt the user to choose a value from a list that will be saved into a variable.
+     *
+     * @param name The name of this variable, which can be referenced in freemarker expressions later.
+     * @param prompt The prompt to show the user.
+     * @param choices The list of choices to show to the user.
+     * @param note If set, added as extra contextual information after the the prompt but before the area where the user
+     *   types their answer.
+     * @param default The default value to use if nothing is typed. This value will be processed by freemarker and can
+     *   be dynamic!
+     * @param transform Logic to convert a user's answer before assigning it to a variable, e.g. "Yes" -> "true".
+     *   An automatic variable called "value" will be provided for the scope of this function. See the "Converters"
+     *   region inside [FreemarkerState.model] for the list.
+     */
+    @Serializable
+    @SerialName("ChooseVar")
+    class ChooseVar(
+        val name: String,
+        val prompt: String,
+        val choices: List<String>,
+        val note: String? = null,
+        val default: Int = 0,
         val transform: String? = null,
     ) : Instruction()
 

@@ -7,3 +7,15 @@ class IsNotEmptyMethod : SingleArgMethodModel() {
         return Validations.isNotEmpty(value)
     }
 }
+
+class KebabCaseMethod : SingleArgMethodModel() {
+    override fun exec(value: String): String {
+        return value.lowercase().split(" ").joinToString("-")
+    }
+}
+
+class LowercaseMethod : SingleArgMethodModel() {
+    override fun exec(value: String): String {
+        return value.lowercase()
+    }
+}

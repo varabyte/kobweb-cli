@@ -48,7 +48,7 @@ private fun Session.queryUserForSiteLayout(): SiteLayout? {
     return chooseFromList(
         "Specify what kind of export layout you want to use.",
         SiteLayout.entries.toList(),
-        itemToString = { @Suppress("DEPRECATION") it.name.lowercase().capitalize() },
+        choiceToString = { @Suppress("DEPRECATION") it.name.lowercase().capitalize() },
         produceInitialIndex = { SiteLayout.entries.indexOf(SiteLayout.STATIC) }
     ) { selectedLayout ->
         when (selectedLayout) {

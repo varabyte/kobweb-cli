@@ -18,9 +18,12 @@ import com.varabyte.kobweb.cli.create.freemarker.methods.IsYesNoMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.NotMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.PackageToPathMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.EscapeYamlStringMethod
+import com.varabyte.kobweb.cli.create.freemarker.methods.KebabCaseMethod
+import com.varabyte.kobweb.cli.create.freemarker.methods.LowercaseMethod
 import com.varabyte.kobweb.cli.create.freemarker.methods.YesNoToBoolMethod
 import com.varabyte.kobweb.common.error.KobwebException
 import com.varabyte.kobweb.common.path.invariantSeparatorsPath
+import com.varabyte.kotter.foundation.text.textLine
 import com.varabyte.kotter.runtime.Session
 import freemarker.cache.NullCacheStorage
 import freemarker.template.Configuration
@@ -63,6 +66,8 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
         "escapeYamlString" to EscapeYamlStringMethod(), // Added in 0.9.17
         "fileToTitle" to FileToTitleMethod(),
         "fileToPackage" to FileToPackageMethod(),
+        "kebabCase" to KebabCaseMethod(), // Added in 0.9.22
+        "lowercase" to LowercaseMethod(), // Added in 0.9.22
         "not" to NotMethod(),
         "packageToPath" to PackageToPathMethod(),
         "yesNoToBool" to YesNoToBoolMethod(),
@@ -91,6 +96,10 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
                     process(inst.instructions)
                 }
 
+                is Instruction.BlankLine -> {
+                    section { textLine() }.run()
+                }
+
                 is Instruction.Inform -> {
                     val message = inst.message.process(cfg, model)
                     informInfo(message)
@@ -116,6 +125,19 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
                         val answer = queryUser(inst.prompt, inst.note, default, validateAnswer = { value ->
                             (model[inst.validation] as? TemplateMethodModelEx)?.exec(listOf(value))?.toString()
                         })
+
+                        inst.transform?.let { transform ->
+                            val modelWithValue = model.toMutableMap()
+                            modelWithValue["value"] = answer
+                            transform.process(cfg, modelWithValue)
+                        } ?: answer
+                    }
+                    model[inst.name] = finalAnswer
+                }
+
+                is Instruction.ChooseVar -> {
+                    val finalAnswer = run {
+                        val answer = queryUser(inst.prompt, inst.note, inst.choices, inst.default)
 
                         inst.transform?.let { transform ->
                             val modelWithValue = model.toMutableMap()
