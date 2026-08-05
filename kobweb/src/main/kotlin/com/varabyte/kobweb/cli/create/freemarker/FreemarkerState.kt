@@ -53,21 +53,21 @@ class FreemarkerState(private val src: Path, private val dest: Path) {
         "projectFolder" to dest.name,
 
         // region Validators
-        "isInt" to IsIntMethod(), // Added in 0.9.13
+        "isInt" to IsIntMethod(),
         "isNotEmpty" to IsNotEmptyMethod(),
-        "isNumber" to IsNumberMethod(), // Added in 0.9.13
+        "isNumber" to IsNumberMethod(),
         "isPackage" to IsPackageMethod(),
-        "isPositiveInt" to IsPositiveIntMethod(), // Added in 0.9.13
-        "isPositiveNumber" to IsPositiveNumberMethod(), // Added in 0.9.13
+        "isPositiveInt" to IsPositiveIntMethod(),
+        "isPositiveNumber" to IsPositiveNumberMethod(),
         "isYesNo" to IsYesNoMethod(),
         // endregion
 
         // region Converters
-        "escapeYamlString" to EscapeYamlStringMethod(), // Added in 0.9.17
+        "escapeYamlString" to EscapeYamlStringMethod(),
         "fileToTitle" to FileToTitleMethod(),
         "fileToPackage" to FileToPackageMethod(),
-        "kebabCase" to KebabCaseMethod(), // Added in 0.9.22
-        "lowercase" to LowercaseMethod(), // Added in 0.9.22
+        "kebabCase" to KebabCaseMethod(),
+        "lowercase" to LowercaseMethod(),
         "not" to NotMethod(),
         "packageToPath" to PackageToPathMethod(),
         "yesNoToBool" to YesNoToBoolMethod(),

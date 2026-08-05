@@ -38,6 +38,7 @@ sealed class Instruction(
      */
     @Serializable
     @SerialName("BlankLine")
+    @ApiStatus.AvailableSince("0.9.22")
     class BlankLine : Instruction()
 
     /**
@@ -93,6 +94,7 @@ sealed class Instruction(
      */
     @Serializable
     @SerialName("ChooseVar")
+    @ApiStatus.AvailableSince("0.9.22")
     class ChooseVar(
         val name: String,
         val prompt: String,
