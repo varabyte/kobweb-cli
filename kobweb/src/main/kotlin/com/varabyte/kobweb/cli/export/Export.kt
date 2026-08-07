@@ -125,9 +125,9 @@ private fun handleExport(
                 textLine()
                 when (exportState) {
                     ExportState.EXPORTING -> {
+                        gradleAlertBundle.renderSyncMessage(this)
                         textLine("Exporting$ellipsis")
                         textLine()
-                        gradleAlertBundle.renderInto(this)
                     }
                     ExportState.FINISHING -> textLine("Finishing up$ellipsis")
                     ExportState.FINISHED -> {

@@ -360,14 +360,12 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
         return handled
     }
 
-    fun renderInto(renderScope: RenderScope) {
+    fun renderSyncMessage(renderScope: RenderScope) = renderScope.apply {
         renderScope.apply {
             if (!hasFirstTaskRun) {
                 val syncMessage = "Syncing project"
-                yellow {
-                    text(syncMessage)
-                }
                 black(isBright = true) {
+                    text(syncMessage)
                     val session = renderScope.section.session
                     val descTruncated = lastProgressEvent?.let {
                         session.textMetrics.truncateToWidth(
@@ -384,7 +382,9 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
                 textLine()
             }
         }
+    }
 
+    fun renderWarningsAndErrors(renderScope: RenderScope) {
         val totalMessageCount = warnings.size + errors.size
         if (totalMessageCount == 0) return
 

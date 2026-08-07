@@ -55,9 +55,9 @@ fun Session.handleStop(
 
         when (stopState) {
             StopState.STOPPING -> {
+                gradleAlertBundle.renderSyncMessage(this)
                 textLine("Stopping a Kobweb server$ellipsisAnim")
                 textLine()
-                gradleAlertBundle.renderInto(this)
             }
 
             StopState.STOPPED -> {

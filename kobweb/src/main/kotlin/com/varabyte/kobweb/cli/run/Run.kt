@@ -179,9 +179,9 @@ private fun handleRun(
 
                     when (runState) {
                         RunState.STARTING -> {
+                            gradleAlertBundle.renderSyncMessage(this)
                             textLine("Starting a Kobweb server ($envName)$ellipsisAnim")
                             textLine()
-                            gradleAlertBundle.renderInto(this)
                             textLine("Press Q anytime to cancel.")
                         }
 
@@ -207,7 +207,7 @@ private fun handleRun(
                                     }
                                 }
                                 textLine()
-                                gradleAlertBundle.renderInto(this)
+                                gradleAlertBundle.renderWarningsAndErrors(this)
 
                                 if (!showHelp) {
                                     textLine("Press Q anytime to stop the server. Press H for help.")
