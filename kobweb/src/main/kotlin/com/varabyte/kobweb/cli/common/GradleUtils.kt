@@ -138,7 +138,7 @@ class KobwebGradle(private val env: ServerEnvironment, projectDir: File) : Close
         // Add a progress listener specifically with the purpose of picking up events that will happen frequently during
         // the startup lifecycle, so we can show users something is happening (besides just "please wait, trust us")
         // before tasks start getting executed.
-        val startupProgressEvents = listOf(OperationType.GENERIC, OperationType.PROJECT_CONFIGURATION)
+        val startupProgressEvents = listOf(OperationType.PROJECT_CONFIGURATION, OperationType.FILE_DOWNLOAD)
 
         onStarting(OnStartingEvent(task, finalArgs))
         projectConnection.newBuild()
