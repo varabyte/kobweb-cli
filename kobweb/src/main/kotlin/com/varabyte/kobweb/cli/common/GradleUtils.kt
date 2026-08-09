@@ -3,6 +3,7 @@ package com.varabyte.kobweb.cli.common
 import com.varabyte.kobweb.cli.common.kotter.handleConsoleOutput
 import com.varabyte.kobweb.server.api.ServerEnvironment
 import com.varabyte.kobweb.server.api.SiteLayout
+import com.varabyte.kotter.foundation.anim.textAnimOf
 import com.varabyte.kotter.foundation.collections.liveListOf
 import com.varabyte.kotter.foundation.input.Key
 import com.varabyte.kotter.foundation.input.Keys
@@ -282,6 +283,8 @@ fun RunScope.handleGradleOutput(line: String, isError: Boolean, onGradleEvent: (
 // Windows flickering while still presenting enough information for users. If people complain,
 // 5 is too small, we can allow users to configure this somehow, e.g. via CLI params.
 class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
+    private val spinnerAnim = session.textAnimOf(Anims.SPINNER)
+
     private val warnings = session.liveListOf<GradleAlert.Warning>()
     private val errors = session.liveListOf<GradleAlert.Error>()
     private var lastProgressEvent by session.liveVarOf<GradleAlert.Progress?>(null)
@@ -363,19 +366,19 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
     fun renderSyncMessage(renderScope: RenderScope) = renderScope.apply {
         renderScope.apply {
             if (!hasFirstTaskRun) {
-                val syncMessage = "Syncing project"
+                val syncMessage = "$spinnerAnim Syncing project"
                 black(isBright = true) {
                     text(syncMessage)
                     val session = renderScope.section.session
-                    val descTruncated = lastProgressEvent?.let {
-                        session.textMetrics.truncateToWidth(
-                            it.desc,
+                    (lastProgressEvent?.desc ?: "Initializing").let { desc ->
+                        val descTruncated = session.textMetrics.truncateToWidth(
+                            desc,
                             // -3 accounts for parentheses and space
                             session.terminalSize.width - syncMessage.length - 3,
                             ellipsis = EllipsisPresets.SYMBOL
                         )
-                    } ?: "Initializing"
-                    text(" ($descTruncated)")
+                        text(" ($descTruncated)")
+                    }
                     textLine()
                 }
 
