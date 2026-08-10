@@ -37,6 +37,12 @@ dependencies {
     runtimeOnly("org.slf4j:slf4j-nop:2.0.18") // Needed by gradle tooling
 }
 
+kotlin {
+    compilerOptions {
+        optIn.add("kotlin.contracts.ExperimentalContracts")
+    }
+}
+
 application {
     applicationDefaultJvmArgs = listOf(
         "-Dkobweb.version=${version}",

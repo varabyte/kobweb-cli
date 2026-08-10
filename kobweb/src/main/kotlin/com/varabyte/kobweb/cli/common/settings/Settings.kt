@@ -8,6 +8,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import org.jetbrains.annotations.ApiStatus
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
@@ -72,6 +74,7 @@ object SettingsFile {
      * ideally should not live too long.
      */
     fun <R> useSettings(block: Settings.() -> R): R {
+        contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
         val result: R
         synchronized(lock) {
             val settings = readSettings()
