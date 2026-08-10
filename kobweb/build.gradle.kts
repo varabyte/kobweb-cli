@@ -51,8 +51,9 @@ application {
     mainClass.set("MainKt")
 }
 
-// Useful for CLI
+// Useful for CI
 tasks.register("printVersion") {
+    description = "Prints the current version of this CLI."
     doLast {
         println(version.toString())
     }
