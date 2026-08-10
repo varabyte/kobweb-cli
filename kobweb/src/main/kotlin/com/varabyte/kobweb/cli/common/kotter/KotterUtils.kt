@@ -29,6 +29,8 @@ import com.varabyte.kotter.runtime.RunScope
 import com.varabyte.kotter.runtime.Session
 import com.varabyte.kotter.runtime.render.RenderScope
 
+const val SELECTION_CURSOR = '❯'
+
 private enum class ProcessingState {
     IN_PROGRESS,
     FAILED,
@@ -260,7 +262,7 @@ fun <T> Session.chooseFromList(query: String, choices: List<T>, note: String? = 
 
         if (addGapAfterPrompt) textLine()
         choices.forEachIndexed { index, choice ->
-            text(if (index == choiceIndex) '>' else ' ')
+            text(if (index == choiceIndex) SELECTION_CURSOR else ' ')
             text(' ')
             cyan { textLine(choiceToString(choice)) }
         }

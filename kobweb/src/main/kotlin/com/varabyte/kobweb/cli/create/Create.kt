@@ -4,6 +4,7 @@ import com.varabyte.kobweb.cli.common.PathUtils
 import com.varabyte.kobweb.cli.common.Validations
 import com.varabyte.kobweb.cli.common.findGit
 import com.varabyte.kobweb.cli.common.handleFetch
+import com.varabyte.kobweb.cli.common.kotter.SELECTION_CURSOR
 import com.varabyte.kobweb.cli.common.kotter.askYesNo
 import com.varabyte.kobweb.cli.common.kotter.cmd
 import com.varabyte.kobweb.cli.common.kotter.newline
@@ -47,7 +48,7 @@ private fun RenderScope.renderTemplateItem(
     val description = templateFile.template.metadata.description
     val isImportant = templateFile.template.metadata.shouldHighlight
 
-    text(if (isSelected) '>' else ' ')
+    text(if (isSelected) SELECTION_CURSOR else ' ')
     text(' ')
     cyan(isBright = isImportant) { text(templatePath) }
     textLine(": $description")
