@@ -254,7 +254,7 @@ fun <T> Session.chooseFromList(query: String, choices: List<T>, note: String? = 
             textLine(buildString {
                 append(query)
                 if (allowCancelling) {
-                    append(" Choose one or press Q to cancel.")
+                    append(" Choose one or press Escape to cancel.")
                 }
             })
         }
