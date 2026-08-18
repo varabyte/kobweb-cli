@@ -18,6 +18,7 @@ import com.varabyte.kotter.runtime.Session
 import com.varabyte.kotter.runtime.concurrent.createKey
 import com.varabyte.kotter.runtime.render.RenderScope
 import com.varabyte.kotter.runtime.terminal.EllipsisPresets
+import com.varabyte.kotter.runtime.terminal.TruncateAt
 import com.varabyte.kotter.runtime.terminal.truncateToWidth
 import org.gradle.tooling.CancellationTokenSource
 import org.gradle.tooling.GradleConnectionException
@@ -375,7 +376,8 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
                             desc,
                             // -3 accounts for parentheses and space
                             session.terminalSize.width - syncMessage.length - 3,
-                            ellipsis = EllipsisPresets.SYMBOL
+                            ellipsis = EllipsisPresets.SYMBOL,
+                            truncateAt = TruncateAt.MIDDLE, // Don't cut off interesting information from the end!
                         )
                         text(" ($descTruncated)")
                     }
