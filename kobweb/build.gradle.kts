@@ -52,8 +52,10 @@ application {
 // Useful for CI
 tasks.register("printVersion") {
     description = "Prints the current version of this CLI."
+    // Access version in a way that is cache configuration compatibile
+    val cliVersion = provider { version.toString() }
     doLast {
-        println(version.toString())
+        println(cliVersion.get())
     }
 }
 
