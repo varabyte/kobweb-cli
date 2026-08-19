@@ -36,9 +36,13 @@ For a release...
 
 ## Releasing
 
+After checking in release branch "X.Y.Z" (with `-SNAPSHOT` suffix removed from the version), and waiting for the build
+action to generate the artifacts...
+
 * Create a new release on GitHub.
 * Choose a tag: "vX.Y.Z", then "Create a new tag on publish"
-* Set that tag for the release title as well
+* Set target to the release branch: "X.Y.Z"
+* Set that tag value, "vX.Y.Z", for the release title as well
 * Fill out the release, using previous releases as guidance (and comparing changes to main since last time to see what's
   new)
 * Add the .zip and .tar files downloaded from GitHub actions or, if built manually, from `kobweb/build/distributions`
