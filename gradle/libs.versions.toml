@@ -14,6 +14,7 @@ shadow = "9.6.1"
 
 [libraries]
 clikt-core = { module = "com.github.ajalt.clikt:clikt-core", version.ref = "clikt" }
+compose-compiler-plugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
 directories = { module = "dev.dirs:directories", version.ref = "directories" }
 freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 kobweb-common = { module = "com.varabyte.kobweb:kobweb-common", version.ref = "kobweb-libs" }

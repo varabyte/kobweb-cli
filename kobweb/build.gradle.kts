@@ -3,6 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.transformers.ApacheLicenseReso
 import org.jreleaser.model.Active
 
 plugins {
+    id("kobweb-cli-compilation-settings")
     kotlin("jvm")
     kotlin("plugin.serialization")
     application
