@@ -121,18 +121,26 @@ private fun handleExport(
             val ellipsis = textAnimOf(Anims.ELLIPSIS)
             var exception by liveVarOf<Exception?>(null) // Set if ExportState.INTERRUPTED
             section {
+                fun renderWarningsAndErrors(showNavigationHelp: Boolean = true) {
+                    textLine()
+                    gradleAlertBundle.renderWarningsAndErrors(this, showNavigationHelp)
+                }
+
                 // Add space between this block and Gradle text which will appear above
                 textLine()
                 when (exportState) {
                     ExportState.EXPORTING -> {
                         gradleAlertBundle.renderSyncMessage(this)
                         textLine("Exporting$ellipsis")
-                        textLine()
+                        renderWarningsAndErrors()
                     }
-                    ExportState.FINISHING -> textLine("Finishing up$ellipsis")
+                    ExportState.FINISHING -> {
+                        textLine("Finishing up$ellipsis")
+                        renderWarningsAndErrors()
+                    }
                     ExportState.FINISHED -> {
                         textLine("Export finished successfully.")
-                        textLine()
+                        renderWarningsAndErrors(showNavigationHelp = false)
 
                         text("You can run ")
                         cyan {
@@ -149,9 +157,16 @@ private fun handleExport(
                         }
                         textLine(" to preview your site.")
                     }
-                    ExportState.CANCELLING -> yellow { textLine("Cancelling export$ellipsis") }
-                    ExportState.CANCELLED -> yellow { textLine("Export cancelled by user.") }
+                    ExportState.CANCELLING -> {
+                        yellow { textLine("Cancelling export$ellipsis") }
+                        renderWarningsAndErrors()
+                    }
+                    ExportState.CANCELLED -> {
+                        yellow { textLine("Export cancelled by user.") }
+                        renderWarningsAndErrors(showNavigationHelp = false)
+                    }
                     ExportState.INTERRUPTED -> {
+                        gradleAlertBundle.renderWarningsAndErrors(this, showNavigationHelp = false)
                         red { textLine("Export interrupted by exception. Message(s):") }
                         textLine()
                         textLine(exception!!.toMessageLinesString())
@@ -190,8 +205,10 @@ private fun handleExport(
                     exportState = ExportState.FINISHING
                 } catch (ex: Exception) {
                     if (exportState != ExportState.CANCELLING) {
-                        interruptWithException(ex)
-                        return@run
+                        exception = ex
+                        // Uh oh something bad happened. Let's gracefully shut down the server and then show the error
+                        // to the user.
+                        exportState = ExportState.FINISHING
                     }
                 }
 
@@ -201,7 +218,12 @@ private fun handleExport(
                 stopProcess.lineHandler = ::handleConsoleOutput
                 stopProcess.tryWaitForCompletion()
 
-                exportState = if (exportState == ExportState.FINISHING) ExportState.FINISHED else ExportState.CANCELLED
+                exportState = when {
+                    exception != null -> ExportState.INTERRUPTED
+                    exportState == ExportState.FINISHING -> ExportState.FINISHED
+                    exportState == ExportState.CANCELLING -> ExportState.CANCELLING
+                    else -> error("Unexpected state after export finished running ($exportState).")
+                }
             }
         }) {
         warnFallingBackToPlainText()

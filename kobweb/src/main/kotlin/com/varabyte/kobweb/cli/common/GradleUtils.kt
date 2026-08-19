@@ -389,20 +389,16 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
         }
     }
 
-    fun renderWarningsAndErrors(renderScope: RenderScope) {
+    fun renderWarningsAndErrors(renderScope: RenderScope, showNavigationHelp: Boolean = true) {
         val totalMessageCount = warnings.size + errors.size
         if (totalMessageCount == 0) return
 
         renderScope.apply {
             yellow {
-                text("Found ${errors.size} error(s) and ${warnings.size} warning(s).")
-                if (errors.isNotEmpty()) {
-                    text(" Please resolve errors to continue.")
-                }
-                textLine()
+                textLine("Found ${errors.size} error(s) and ${warnings.size} warning(s).")
             }
             textLine()
-            if (startIndex > 0) {
+            if (showNavigationHelp && startIndex > 0) {
                 textLine("... Press UP, PAGE UP, or HOME to see earlier errors.")
             }
             for (i in startIndex until (startIndex + pageSize)) {
@@ -422,7 +418,7 @@ class GradleAlertBundle(session: Session, private val pageSize: Int = 5) {
                     else -> error("Unexpected alert type: $alert")
                 }
             }
-            if (startIndex < maxIndex) {
+            if (showNavigationHelp && (startIndex < maxIndex)) {
                 textLine("... Press DOWN, PAGE DOWN, or END to see later errors.")
             }
             textLine()
