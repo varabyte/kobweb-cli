@@ -182,6 +182,7 @@ private fun handleRun(
                             gradleAlertBundle.renderSyncMessage(this)
                             textLine("Starting a Kobweb server ($envName)$ellipsisAnim")
                             textLine()
+                            gradleAlertBundle.renderWarningsAndErrors(this)
                             textLine("Press Q anytime to cancel.")
                         }
 
