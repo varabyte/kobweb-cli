@@ -1,5 +1,5 @@
 [versions]
-kobweb-cli = "0.9.23-SNAPSHOT"
+kobweb-cli = "0.9.23"
 #-----------------------------
 clikt = "5.0.1"
 directories = "26"
