@@ -20,6 +20,9 @@ jobs:
           distribution: temurin
           java-version: 25
 
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v23
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
 
@@ -43,30 +46,53 @@ jobs:
       - name: Get Kobweb CLI Version
         id: cli_version
         run: |
-          echo "VERSION=$(./gradlew -q :kobweb:printVersion)" >> "$GITHUB_OUTPUT"
+          CLI_VERSION=$(./gradlew -q :kobweb:printVersion)
+          echo "VERSION=$CLI_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Kobweb CLI version: $CLI_VERSION"
+
+      - name: Setup Asset Path variables
+        env:
+          CLI_VERSION: ${{ steps.cli_version.outputs.VERSION }}
+        run: |
+          DIST_DIR="kobweb/build/distributions"
+          ZIP_NAME="kobweb-$CLI_VERSION.zip"
+          TAR_NAME="kobweb-$CLI_VERSION.tar"
+
+          echo "DIST_DIR=$DIST_DIR" >> $GITHUB_ENV
+          echo "ASSET_ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+          echo "ASSET_TAR_NAME=$TAR_NAME" >> $GITHUB_ENV
+          echo "ASSET_ZIP_PATH=$DIST_DIR/$ZIP_NAME" >> $GITHUB_ENV
+          echo "ASSET_TAR_PATH=$DIST_DIR/$TAR_NAME" >> $GITHUB_ENV
 
       - name: Download Release Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLI_VERSION: ${{ steps.cli_version.outputs.VERSION }}
         run: |
-          ASSET_ZIP="kobweb-$CLI_VERSION.zip"
-          ASSET_TAR="kobweb-$CLI_VERSION.tar"
-          # Need to put files here so jreleaser can find them
-          ASSET_PATH="kobweb/build/distributions"
-          mkdir -p $ASSET_PATH
+          mkdir -p $DIST_DIR
+
+          echo "Getting ready to download..."
+          echo "Target Release Tag: v$CLI_VERSION"
+          echo "Output Zip Path: $ASSET_ZIP_PATH"
+          echo "Output Tar Path: $ASSET_TAR_PATH"
+
           # Download assets using GitHub API
           curl -sL -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/octet-stream" \
             "$(curl -sL -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v$CLI_VERSION" | jq -r ".assets[] | select(.name==\"$ASSET_ZIP\").url")" \
-            -o "$ASSET_PATH/$ASSET_ZIP"
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v$CLI_VERSION" | jq -r ".assets[] | select(.name==\"$ASSET_ZIP_NAME\").url")" \
+            -o "$ASSET_ZIP_PATH"
           curl -sL -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/octet-stream" \
             "$(curl -sL -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v$CLI_VERSION" | jq -r ".assets[] | select(.name==\"$ASSET_TAR\").url")" \
-            -o "$ASSET_PATH/$ASSET_TAR"
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/v$CLI_VERSION" | jq -r ".assets[] | select(.name==\"$ASSET_TAR_NAME\").url")" \
+            -o "$ASSET_TAR_PATH"
 
-          echo "Zip checksum $(sha256sum $ASSET_PATH/$ASSET_ZIP)"
-          echo "Tar checksum $(sha256sum $ASSET_PATH/$ASSET_TAR)"
+          # `awk '{print $1}'` trims file name from sha256sum output
+          ZIP_HASH=$(sha256sum "$ASSET_ZIP_PATH" | awk '{print $1}')
+          echo "Zip Checksum: $ZIP_HASH"
+          TAR_HASH=$(sha256sum "$ASSET_TAR_PATH" | awk '{print $1}')
+          echo "Tar Checksum: $TAR_HASH"
+          echo "ZIP_HASH=$ZIP_HASH" >> $GITHUB_ENV
+          echo "TAR_HASH=$TAR_HASH" >> $GITHUB_ENV
 
       - name: Publish Kobweb CLI to package managers
         run: ./gradlew :kobweb:jreleaserPublish
@@ -80,3 +106,186 @@ jobs:
           commit_username: phi1309
           commit_email: phi1309@protonmail.com
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+
+      - name: Update Nix Repository
+        env:
+          CLI_VERSION: ${{ steps.cli_version.outputs.VERSION }}
+          DOWNSTREAM_TOKEN: ${{ secrets.PUBLISH_DOWNSTREAM_REPOS_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dryRun }}
+        run: |
+          # Raw hash needed for "build by source" nix package
+          RAW_NIX_HASH=$(nix-prefetch-url --unpack "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/v${CLI_VERSION}.tar.gz")
+
+          NIX_ZIP_HASH="sha256:$ZIP_HASH"
+          NIX_SRC_HASH=$(nix hash convert --to sri --hash-algo sha256 "$RAW_NIX_HASH")
+
+          cat <<EOF > kobweb-metadata.nix
+          # These values will be updated by https://github.com/varabyte/kobweb-cli when a new version is published
+          {
+            version = "${CLI_VERSION}";
+            zipHash = "${NIX_ZIP_HASH}";
+            srcHash = "${NIX_SRC_HASH}";
+          }
+          EOF
+
+          NIX_REPO="varabyte/kobweb-cli-nix"
+          git clone --depth 1 "https://x-access-token:${DOWNSTREAM_TOKEN}@github.com/${NIX_REPO}.git" nix-repo
+          cd nix-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          TARGET_BRANCH=$(git branch --show-current)
+          echo "Cloned \"${NIX_REPO}\". On branch \"${TARGET_BRANCH}\"."
+
+          cp ../kobweb-metadata.nix pkgs/kobweb-metadata.nix
+
+          echo "Updating version in README to kobweb-cli-nix/archive/v${CLI_VERSION}.tar.gz"
+          sed --regexp-extended --in-place "s|kobweb-cli-nix/archive/v[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz|kobweb-cli-nix/archive/v${CLI_VERSION}.tar.gz|g" README.md
+
+          git add .
+
+          STAGED_DIFF=$(git diff --staged)
+
+          if [ -z "$STAGED_DIFF" ]; then
+            echo "No changes detected; nothing to push to the \"${NIX_REPO}\" repository."
+            exit 0
+          fi
+
+          echo "Staged diff for \"${NIX_REPO}\":"
+          echo ""
+          echo "$STAGED_DIFF"
+          echo ""
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run enabled. Skipping push to \"${NIX_REPO}\" repository."
+            exit 0
+          else
+            git commit -m "Update nix metadata after kobweb-cli upgraded to v${CLI_VERSION}"
+            TAG="v${CLI_VERSION}"
+            git tag "$TAG"
+            git push origin "$TARGET_BRANCH" "refs/tags/$TAG"
+          fi
+
+      - name: Update Kobweb Framework README
+        env:
+          CLI_VERSION: ${{ steps.cli_version.outputs.VERSION }}
+          DOWNSTREAM_TOKEN: ${{ secrets.PUBLISH_DOWNSTREAM_REPOS_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dryRun }}
+        run: |
+          KOBWEB_REPO="varabyte/kobweb"
+          git clone --depth 1 --no-single-branch "https://x-access-token:${DOWNSTREAM_TOKEN}@github.com/${KOBWEB_REPO}.git" kobweb-framework
+          cd kobweb-framework
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          REPLACEMENTS=(
+            "kobweb_cli-[0-9]+\.[0-9]+\.[0-9]+|kobweb_cli-${CLI_VERSION}"
+            "kobweb-cli: [0-9]+\.[0-9]+\.[0-9]+|kobweb-cli: ${CLI_VERSION}"
+            "kobweb_cli-[0-9]+\.[0-9]+\.[0-9]+|kobweb_cli-${CLI_VERSION}"
+            "/kobweb-cli/releases/tag/v[0-9]+\.[0-9]+\.[0-9]+|/kobweb-cli/releases/tag/v${CLI_VERSION}"
+            "/kobweb-cli/releases/download/v[0-9]+\.[0-9]+\.[0-9]+/|/kobweb-cli/releases/download/v${CLI_VERSION}/"
+            # NOTE: `kobweb-X.Y.Z-blue` is used for the framework, not the CLI. So skip that match; other separators are
+            # fine, e.g., `kobweb-X.Y.Z.zip` and `kobweb-X.Y.Z/` refer to the CLI binary
+            "kobweb-[0-9]+\.[0-9]+\.[0-9]+([^-])|kobweb-${CLI_VERSION}\1"
+          )
+
+          TARGET_BRANCHES=("dev" "main")
+
+          for TARGET_BRANCH in "${TARGET_BRANCHES[@]}"; do
+            echo "================================="
+            echo "Processing branch: $TARGET_BRANCH"
+            echo "================================="
+            echo ""
+
+            git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
+
+            for entry in "${REPLACEMENTS[@]}"; do
+              # Split the pair on the '|' delimiter
+              SEARCH="${entry%%|*}"
+              REPLACE="${entry##*|}"
+
+              sed --regexp-extended --in-place "s|${SEARCH}|${REPLACE}|g" README.md
+            done
+
+            git add .
+            STAGED_DIFF=$(git diff --staged)
+
+            if [ -z "$STAGED_DIFF" ]; then
+              echo "No changes detected on branch \"${TARGET_BRANCH}\"."
+              continue
+            fi
+
+            echo "Staged diff for \"${TARGET_BRANCH}\":"
+            echo ""
+            echo "$STAGED_DIFF"
+            echo ""
+
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "Dry run enabled. Skipping push to \"${KOBWEB_REPO} [${TARGET_BRANCH}]\" repository."
+              git reset --hard HEAD
+            else
+              git commit -m "Update kobweb-cli versions in README to v${CLI_VERSION}"
+              git push origin "$TARGET_BRANCH"
+            fi
+          done
+
+      - name: Update Kobweb Site docs
+        env:
+          CLI_VERSION: ${{ steps.cli_version.outputs.VERSION }}
+          DOWNSTREAM_TOKEN: ${{ secrets.PUBLISH_DOWNSTREAM_REPOS_TOKEN }}
+          DRY_RUN: ${{ github.event.inputs.dryRun }}
+        run: |
+          KOBWEB_REPO="varabyte/kobweb-site"
+          git clone --depth 1 --no-single-branch "https://x-access-token:${DOWNSTREAM_TOKEN}@github.com/${KOBWEB_REPO}.git" kobweb-site
+          cd kobweb-site
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          cd site/src/jsMain/resources/markdown/docs/getting-started
+
+          REPLACEMENTS=(
+            "/kobweb-cli/releases/tag/v[0-9]+\.[0-9]+\.[0-9]+|/kobweb-cli/releases/tag/v${CLI_VERSION}"
+            "/kobweb-cli/releases/download/v[0-9]+\.[0-9]+\.[0-9]+/|/kobweb-cli/releases/download/v${CLI_VERSION}/"
+            "kobweb-[0-9]+\.[0-9]+\.[0-9]+|kobweb-${CLI_VERSION}"
+          )
+
+          TARGET_BRANCHES=("dev" "main")
+
+          for TARGET_BRANCH in "${TARGET_BRANCHES[@]}"; do
+            echo "================================="
+            echo "Processing branch: $TARGET_BRANCH"
+            echo "================================="
+            echo ""
+
+            git checkout -B "$TARGET_BRANCH" "origin/$TARGET_BRANCH"
+
+            for entry in "${REPLACEMENTS[@]}"; do
+              # Split the pair on the '|' delimiter
+              SEARCH="${entry%%|*}"
+              REPLACE="${entry##*|}"
+
+              sed --regexp-extended --in-place "s|${SEARCH}|${REPLACE}|g" GettingKobweb.md
+            done
+
+            git add .
+            STAGED_DIFF=$(git diff --staged)
+
+            if [ -z "$STAGED_DIFF" ]; then
+              echo "No changes detected on branch \"${TARGET_BRANCH}\"."
+              continue
+            fi
+
+            echo "Staged diff for \"${TARGET_BRANCH}\":"
+            echo ""
+            echo "$STAGED_DIFF"
+            echo ""
+
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "Dry run enabled. Skipping push to \"${KOBWEB_REPO} [${TARGET_BRANCH}]\" repository."
+              git reset --hard HEAD
+            else
+              git commit -m "Update kobweb-cli versions in GettingKobweb article to v${CLI_VERSION}"
+              git push origin "$TARGET_BRANCH"
+            fi
+          done
