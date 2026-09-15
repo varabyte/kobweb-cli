@@ -113,9 +113,10 @@ jobs:
           DOWNSTREAM_TOKEN: ${{ secrets.PUBLISH_DOWNSTREAM_REPOS_TOKEN }}
           DRY_RUN: ${{ github.event.inputs.dryRun }}
         run: |
-          # Raw hash needed for "build by source" nix package
-          RAW_NIX_HASH=$(nix-prefetch-url --unpack "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/v${CLI_VERSION}.tar.gz")
+          TAG="v${CLI_VERSION}"
 
+          # Raw hash needed for "build by source" nix package
+          RAW_NIX_HASH=$(nix-prefetch-url --unpack "https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz")
           NIX_ZIP_HASH="sha256:$ZIP_HASH"
           NIX_SRC_HASH=$(nix hash convert --to sri --hash-algo sha256 "$RAW_NIX_HASH")
 
@@ -139,9 +140,6 @@ jobs:
 
           cp ../kobweb-metadata.nix pkgs/kobweb-metadata.nix
 
-          echo "Updating version in README to kobweb-cli-nix/archive/v${CLI_VERSION}.tar.gz"
-          sed --regexp-extended --in-place "s|kobweb-cli-nix/archive/v[0-9]+\.[0-9]+\.[0-9]+\.tar\.gz|kobweb-cli-nix/archive/v${CLI_VERSION}.tar.gz|g" README.md
-
           git add .
 
           STAGED_DIFF=$(git diff --staged)
@@ -160,10 +158,18 @@ jobs:
             echo "Dry run enabled. Skipping push to \"${NIX_REPO}\" repository."
             exit 0
           else
-            git commit -m "Update nix metadata after kobweb-cli upgraded to v${CLI_VERSION}"
-            TAG="v${CLI_VERSION}"
+            git commit -m "Update kobweb-metadata.nix after kobweb-cli upgraded to ${TAG}"
             git tag "$TAG"
             git push origin "$TARGET_BRANCH" "refs/tags/$TAG"
+
+            echo "\"${NIX_REPO}\" is now tagged. Adding new row into VERSIONS.md file"
+            RAW_KOBWEB_CLI_NIX_HASH=$(nix-prefetch-url --unpack "https://github.com/${NIX_REPO}/archive/${TAG}.tar.gz")
+            KOBWEB_CLI_NIX_SRC_HASH=$(nix hash convert --to sri --hash-algo sha256 "$RAW_KOBWEB_CLI_NIX_HASH")
+            sed --regexp-extended --in-place "s#\|---\|---\|#|---|---|\n| ${TAG} | ${KOBWEB_CLI_NIX_SRC_HASH} |#" VERSIONS.md
+          
+            git add .
+            git commit -m "Added row for ${TAG} to VERSIONS.md"
+            git push origin "$TARGET_BRANCH"
           fi
 
       - name: Update Kobweb Framework README
